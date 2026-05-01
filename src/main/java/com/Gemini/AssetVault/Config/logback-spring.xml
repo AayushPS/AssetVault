@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <property name="LOG_PATH" value="logs"/>
+    <property name="LOG_FILE" value="${LOG_PATH}/assetvault.log"/>
+    <property name="LOG_PATTERN"
+              value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"/>
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_FILE}</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH}/assetvault.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>1GB</totalSizeCap>
+        </rollingPolicy>
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+        </encoder>
+    </appender>
+    <root level="INFO">
+        <appender-ref ref="FILE"/>
+    </root>
+    <springProfile name="dev">
+        <logger name="com.Gemini.AssetVault" level="DEBUG" additivity="false">
+            <appender-ref ref="FILE"/>
+        </logger>
+        <logger name="org.hibernate.SQL" level="DEBUG" additivity="false">
+            <appender-ref ref="FILE"/>
+        </logger>
+        <logger name="org.hibernate.type.descriptor.sql" level="TRACE" additivity="false">
+            <appender-ref ref="FILE"/>
+        </logger>
+    </springProfile>
+    <springProfile name="prod">
+        <logger name="com.Gemini.AssetVault" level="INFO" additivity="false">
+            <appender-ref ref="FILE"/>
+        </logger>
+        <logger name="org.hibernate" level="WARN" additivity="false">
+            <appender-ref ref="FILE"/>
+        </logger>
+    </springProfile>
+
+</configuration>
