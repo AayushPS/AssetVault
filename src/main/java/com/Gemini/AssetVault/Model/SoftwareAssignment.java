@@ -1,18 +1,16 @@
 package com.Gemini.AssetVault.Model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 @Entity
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@SuperBuilder
 @Table(name = "software_assignment",
     uniqueConstraints = {
         @UniqueConstraint(
@@ -21,4 +19,11 @@ import lombok.NoArgsConstructor;
     }
 )
 public class SoftwareAssignment extends Assignment{
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "license_id", nullable = false)
+    private SoftwareLicense softwareLicense;
+
+    @Column(name = "seat_index")
+    private Integer seatIndex;
 }

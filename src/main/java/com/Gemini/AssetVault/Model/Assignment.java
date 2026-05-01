@@ -3,6 +3,7 @@ package com.Gemini.AssetVault.Model;
 import com.Gemini.AssetVault.Model.Enum.AssignmentStatus;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
@@ -13,9 +14,11 @@ import java.time.LocalDateTime;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@SuperBuilder
 @EntityListeners(AuditingEntityListener.class)
 public class Assignment {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
@@ -33,7 +36,7 @@ public class Assignment {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     @Setter
-    private AssignmentStatus assignmentStatus;
+    private AssignmentStatus status;
 
     @Column(name = "assigned_by", nullable = false, length = 30)
     private String assignedBy;
