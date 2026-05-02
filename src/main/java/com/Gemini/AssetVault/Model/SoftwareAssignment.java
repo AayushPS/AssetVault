@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
 @Entity
@@ -24,6 +25,7 @@ public class SoftwareAssignment extends Assignment{
     @JoinColumn(name = "license_id", nullable = false)
     private SoftwareLicense softwareLicense;
 
+    @Setter
     @Column(name = "seat_index")
     private Integer seatIndex;
 }

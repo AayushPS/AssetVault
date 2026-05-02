@@ -2,6 +2,7 @@ package com.Gemini.AssetVault.Model;
 
 import com.Gemini.AssetVault.Model.Enum.LicenseType;
 import jakarta.persistence.*;
+import lombok.Setter;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 
@@ -32,12 +33,15 @@ public class SoftwareLicense {
     private LicenseType licenseType;
 
     @Column(nullable = false, length = 100)
+    @Setter
     private String vendor;
 
     @Column(name = "total_seats", nullable = false)
+    @Setter
     private Integer totalSeats;
 
     @Column(name = "used_seats", nullable = false)
+    @Setter
     private Integer usedSeats;
 
     @Column(name = "purchase_date", nullable = false)
@@ -46,12 +50,14 @@ public class SoftwareLicense {
     @Column(name = "purchase_cost", precision = 10, scale = 2)
     private BigDecimal purchaseCost;
 
+    @Setter
     @Column(name = "expiry_date")
     private LocalDate expiryDate;
 
     //assignedEmployees handled via Assignment superclass and Software Assignment together, it's many to many featrure remains intact via Assignment and Software Assignment working together
 
     @Column(name = "is_active")
+    @Setter
     private Boolean isActive;
 
     @CreatedDate
@@ -60,5 +66,6 @@ public class SoftwareLicense {
 
     @LastModifiedDate
     @Column(name = "updated_at", nullable = false)
+    @Setter
     private LocalDateTime updatedAt;
 }
