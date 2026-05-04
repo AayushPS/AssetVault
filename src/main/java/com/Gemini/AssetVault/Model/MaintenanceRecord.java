@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
 @Table(name = "maintenance_record")
 @EntityListeners(AuditingEntityListener.class)
 @Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -33,27 +34,22 @@ public class MaintenanceRecord {
     private MaintenanceType maintenanceType;
 
     @Column(columnDefinition = "TEXT")
-    @Setter
     private String description;
 
     @Column(name = "maintenance_cost", precision = 10, scale = 2)
-    @Setter
     private BigDecimal maintenanceCost;
 
     @Column(length = 100)
-    @Setter
     private String vendor;
 
     @Column(name = "scheduled_date", nullable = false)
     private LocalDate scheduledDate;
 
     @Column(name = "completed_date")
-    @Setter
     private LocalDate completedDate;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    @Setter
     private MaintenanceStatus status;
 
     @CreatedDate

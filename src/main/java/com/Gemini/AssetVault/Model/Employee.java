@@ -23,6 +23,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 @Getter
+@Setter
 public class Employee {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -32,22 +33,19 @@ public class Employee {
     private String name;
 
     @Column(nullable = false, length = 30)
-    @Setter
     private String email;
 
     @Column(nullable = false, length = 15)
-    @Setter
     private String department;
 
     @Column(nullable = false, length = 30)
-    @Setter
     private String designation;
 
     @Column(name = "employee_code", nullable = false, unique = true, length = 30)
     private String employeeCode;
 
     @Column(name = "is_active", nullable = false)
-    @Setter
+    @Builder.Default
     private boolean isActive = true;
 
     @CreatedDate

@@ -3,6 +3,8 @@ package com.Gemini.AssetVault.Model;
 import com.Gemini.AssetVault.Model.Enum.AssetStatus;
 import com.Gemini.AssetVault.Model.Enum.AssetType;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -30,7 +32,10 @@ import java.util.List;
 )
 @EntityListeners(AuditingEntityListener.class)
 @Getter
+@Setter
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Asset {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -54,8 +59,8 @@ public class Asset {
 
     @Column(nullable = false, length = 20)
     @Enumerated(EnumType.STRING)
-    @Setter
-    private AssetStatus status;
+    @Builder.Default
+    private AssetStatus status = AssetStatus.AVAILABLE;
 
     @Column(name = "purchase_date", nullable = false)
     private LocalDate purchaseDate;
@@ -84,5 +89,6 @@ public class Asset {
     private LocalDateTime updatedAt;
 
     @OneToMany(mappedBy = "asset", fetch = FetchType.LAZY)
+    @Builder.Default
     private List<AssetAssignment> assignments = new ArrayList<>();
 }

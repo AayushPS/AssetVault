@@ -1,16 +1,16 @@
 package com.Gemini.AssetVault.Repository;
 
 import com.Gemini.AssetVault.Model.Asset;
+import com.Gemini.AssetVault.Model.Enum.AssignmentStatus;
 import com.Gemini.AssetVault.Model.Enum.AssetStatus;
 import com.Gemini.AssetVault.Model.Enum.AssetType;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -24,143 +24,192 @@ public interface AssetRepository extends JpaRepository<Asset,Long> {
     Optional<Asset> findByAssetCode(String assetCode); //get
     boolean existsByAssetCode(String assetCode); //exception
     boolean existsBySerialNumber(String serialNumber); //exception
+    boolean existsBySerialNumberAndIdNot(String serialNumber, Long id);
 
     Page<Asset> findByType(AssetType type, Pageable pageable); //get
+    Page<Asset> findAllByType(AssetType type, Pageable pageable); //get
     List<Asset> findAllByType(AssetType type); //get
 
     Page<Asset> findByStatus(AssetStatus status, Pageable pageable); //get //get
+    Page<Asset> findAllByStatus(AssetStatus status, Pageable pageable); //get
     List<Asset> findAllByStatus(AssetStatus status); //get
 
-    @Query("""
-            SELECT
-                DISTINCT a
-            FROM Asset a
-            JOIN a.assignments aa
-                ON aa.status = com.Gemini.AssetVault.Model.Enum.AssignmentStatus.ACTIVE
-            JOIN aa.employee e
-                ON LOWER(e.department) = LOWER(:department)
-            """)
-    Page<Asset> findAssetsByDepartment(@Param("department") String department, Pageable pageable);
-    @Query("""
-            SELECT
-                DISTINCT a
-            FROM Asset a
-            JOIN a.assignments aa
-                ON aa.status = com.Gemini.AssetVault.Model.Enum.AssignmentStatus.ACTIVE
-            JOIN aa.employee e
-                ON LOWER(e.department) = LOWER(:department)
-            """)
-    List<Asset> findAssetsByDepartment(@Param("department") String department);
-
-    @Query("""
-            SELECT
-                a
-            FROM Asset a
-            WHERE
-                a.warrantyExpiryDate IS NOT NULL
-                AND
-                a.warrantyExpiryDate >= :today
-                AND
-                a.warrantyExpiryDate <= :threshold
-            ORDER BY
-                a.warrantyExpiryDate ASC
-            """)
-    Page<Asset> findAssetsWithWarrantyExpiring(
-            @Param("today") LocalDate today,
-            @Param("threshold") LocalDate threshold,
+    Page<Asset> findDistinctByAssignmentsStatusAndAssignmentsEmployeeDepartmentIgnoreCase(
+            AssignmentStatus status,
+            String department,
             Pageable pageable
-            );
-    @Query("""
-            SELECT
-                a
-            FROM Asset a
-            WHERE
-                a.warrantyExpiryDate IS NOT NULL
-                AND
-                a.warrantyExpiryDate >= :today
-                AND
-                a.warrantyExpiryDate <= :threshold
-            ORDER BY
-                a.warrantyExpiryDate ASC
-            """)
-    List<Asset> findAssetsWithWarrantyExpiring(
-            @Param("today") LocalDate today,
-            @Param("threshold") LocalDate threshold
     );
 
-    @Query("""
-            SELECT a
-            FROM Asset a
-            WHERE
-                a.warrantyExpiryDate IS NOT NULL
-                AND
-                a.warrantyExpiryDate < :today
-            ORDER BY
-                a.warrantyExpiryDate DESC
-            """)
-    Page<Asset> findAssetsWithExpiredWarranty(@Param("today") LocalDate today, Pageable pageable);
-    @Query("""
-            SELECT a
-            FROM Asset a
-            WHERE
-                a.warrantyExpiryDate IS NOT NULL
-                AND
-                a.warrantyExpiryDate < :today
-            ORDER BY
-                a.warrantyExpiryDate DESC
-            """)
-    List<Asset> findAssetsWithExpiredWarranty(@Param("today") LocalDate today);
+    List<Asset> findDistinctByAssignmentsStatusAndAssignmentsEmployeeDepartmentIgnoreCase(
+            AssignmentStatus status,
+            String department
+    );
 
+    Page<Asset> findByWarrantyExpiryDateBetweenOrderByWarrantyExpiryDateAsc(
+            LocalDate today,
+            LocalDate threshold,
+            Pageable pageable
+    );
+
+    List<Asset> findByWarrantyExpiryDateBetweenOrderByWarrantyExpiryDateAsc(
+            LocalDate today,
+            LocalDate threshold
+    );
+
+    Page<Asset> findByWarrantyExpiryDateBeforeOrderByWarrantyExpiryDateDesc(LocalDate today, Pageable pageable);
+
+    List<Asset> findByWarrantyExpiryDateBeforeOrderByWarrantyExpiryDateDesc(LocalDate today);
+
+    Page<Asset> findByNameContainingIgnoreCaseOrBrandContainingIgnoreCaseOrModelContainingIgnoreCase(
+            String nameKeyword,
+            String brandKeyword,
+            String modelKeyword,
+            Pageable pageable
+    );
+
+    List<Asset> findByNameContainingIgnoreCaseOrBrandContainingIgnoreCaseOrModelContainingIgnoreCase(
+            String nameKeyword,
+            String brandKeyword,
+            String modelKeyword
+    );
+
+    default Page<Asset> findAssetsByDepartment(String department, Pageable pageable) {
+        return findDistinctByAssignmentsStatusAndAssignmentsEmployeeDepartmentIgnoreCase(
+                AssignmentStatus.ACTIVE,
+                department,
+                pageable
+        );
+    }
+
+    default List<Asset> findAssetsByDepartment(String department) {
+        return findDistinctByAssignmentsStatusAndAssignmentsEmployeeDepartmentIgnoreCase(
+                AssignmentStatus.ACTIVE,
+                department
+        );
+    }
+
+    default Page<Asset> findAssetsWithWarrantyExpiring(
+            LocalDate today,
+            LocalDate threshold,
+            Pageable pageable
+    ) {
+        return findByWarrantyExpiryDateBetweenOrderByWarrantyExpiryDateAsc(today, threshold, pageable);
+    }
+
+    default List<Asset> findAssetsWithWarrantyExpiring(LocalDate today, LocalDate threshold) {
+        return findByWarrantyExpiryDateBetweenOrderByWarrantyExpiryDateAsc(today, threshold);
+    }
+
+    default Page<Asset> findAssetsWithExpiredWarranty(LocalDate today, Pageable pageable) {
+        return findByWarrantyExpiryDateBeforeOrderByWarrantyExpiryDateDesc(today, pageable);
+    }
+
+    default List<Asset> findAssetsWithExpiredWarranty(LocalDate today) {
+        return findByWarrantyExpiryDateBeforeOrderByWarrantyExpiryDateDesc(today);
+    }
+
+    default Page<Asset> searchByKeyword(String keyword, Pageable pageable) {
+        return findByNameContainingIgnoreCaseOrBrandContainingIgnoreCaseOrModelContainingIgnoreCase(
+                keyword,
+                keyword,
+                keyword,
+                pageable
+        );
+    }
+
+    default List<Asset> searchByKeyword(String keyword) {
+        return findByNameContainingIgnoreCaseOrBrandContainingIgnoreCaseOrModelContainingIgnoreCase(
+                keyword,
+                keyword,
+                keyword
+        );
+    }
+
+    Page<Asset> findByPurchaseCostLessThanEqual(BigDecimal maxCost, Pageable pageable);
+
+    long countByStatus(AssetStatus status);
+    long countByType(AssetType type);
+
+    @Query("""
+            SELECT
+                a.type,
+                COUNT(a)
+            FROM Asset a
+            GROUP BY
+                a.type
+            """)
+    List<Object[]> countGroupedByType();
     @Query(
             value = """
                     SELECT
-                        a
+                        a.type,
+                        COUNT(a)
                     FROM Asset a
-                    WHERE
-                        LOWER(a.name) LIKE LOWER(CONCAT('%', :keyword, '%'))
-                        OR
-                        LOWER(a.brand) LIKE LOWER(CONCAT('%', :keyword, '%'))
-                        OR
-                        LOWER(a.model) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                    GROUP BY
+                        a.type
+                    ORDER BY
+                        a.type ASC
                     """,
             countQuery = """
                     SELECT
-                        COUNT(a)
+                        COUNT(DISTINCT a.type)
                     FROM Asset a
-                    WHERE
-                        LOWER(a.name) LIKE LOWER(CONCAT('%', :keyword, '%'))
-                        OR
-                        LOWER(a.brand) LIKE LOWER(CONCAT('%', :keyword, '%'))
-                        OR
-                        LOWER(a.model) LIKE LOWER(CONCAT('%', :keyword, '%'))
                     """
     )
-    Page<Asset> searchByKeyword(@Param("keyword") String keyword, Pageable pageable);
+    Page<Object[]> countGroupedByType(Pageable pageable);
+
+    @Query("""
+            SELECT
+                e.department,
+                COUNT(DISTINCT a.id),
+                COALESCE(SUM(a.purchaseCost), 0)
+            FROM Asset a
+            JOIN a.assignments aa
+                ON aa.status = com.Gemini.AssetVault.Model.Enum.AssignmentStatus.ACTIVE
+            JOIN aa.employee e
+            GROUP BY
+                e.department
+            ORDER BY
+                e.department ASC
+            """)
+    List<Object[]> getDepartmentAssetSummary();
     @Query(
             value = """
                     SELECT
-                        a
+                        e.department,
+                        COUNT(DISTINCT a.id),
+                        COALESCE(SUM(a.purchaseCost), 0)
                     FROM Asset a
-                    WHERE
-                        LOWER(a.name) LIKE LOWER(CONCAT('%', :keyword, '%'))
-                        OR
-                        LOWER(a.brand) LIKE LOWER(CONCAT('%', :keyword, '%'))
-                        OR
-                        LOWER(a.model) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                    JOIN a.assignments aa
+                        ON aa.status = com.Gemini.AssetVault.Model.Enum.AssignmentStatus.ACTIVE
+                    JOIN aa.employee e
+                    GROUP BY
+                        e.department
+                    ORDER BY
+                        e.department ASC
                     """,
             countQuery = """
                     SELECT
-                        COUNT(a)
+                        COUNT(DISTINCT e.department)
                     FROM Asset a
-                    WHERE
-                        LOWER(a.name) LIKE LOWER(CONCAT('%', :keyword, '%'))
-                        OR
-                        LOWER(a.brand) LIKE LOWER(CONCAT('%', :keyword, '%'))
-                        OR
-                        LOWER(a.model) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                    JOIN a.assignments aa
+                        ON aa.status = com.Gemini.AssetVault.Model.Enum.AssignmentStatus.ACTIVE
+                    JOIN aa.employee e
                     """
     )
-    List<Asset> searchByKeyword(@Param("keyword") String keyword);
+    Page<Object[]> getDepartmentAssetSummary(Pageable pageable);
+
+    @Query("""
+            SELECT
+                COALESCE(SUM(a.purchaseCost), 0)
+            FROM Asset a
+            WHERE
+                a.status NOT IN (
+                    com.Gemini.AssetVault.Model.Enum.AssetStatus.RETIRED,
+                    com.Gemini.AssetVault.Model.Enum.AssetStatus.LOST
+                )
+            """)
+    Optional<BigDecimal> getTotalActiveAssetValue();
 
 
 }

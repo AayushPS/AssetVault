@@ -12,13 +12,7 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @AllArgsConstructor
 @SuperBuilder
-@Table(name = "software_assignment",
-    uniqueConstraints = {
-        @UniqueConstraint(
-                columnNames = {"employee_id","licence_id"}
-        )
-    }
-)
+@Table(name = "software_assignment")
 public class SoftwareAssignment extends Assignment{
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
