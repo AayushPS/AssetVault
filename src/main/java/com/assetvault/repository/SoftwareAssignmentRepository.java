@@ -28,6 +28,11 @@ public interface SoftwareAssignmentRepository extends JpaRepository<SoftwareAssi
             AssignmentStatus status
     );
 
+    List<SoftwareAssignment> findAllBySoftwareLicenseIdAndStatus(
+            Long licenseId,
+            AssignmentStatus status
+    );
+
     Page<SoftwareAssignment> findByEmployeeId(Long employeeId, Pageable pageable);
 
     List<SoftwareAssignment> findAllByEmployeeIdOrderByAssignedDateDescIdDesc(Long employeeId);
@@ -45,4 +50,6 @@ public interface SoftwareAssignmentRepository extends JpaRepository<SoftwareAssi
     );
 
     long countBySoftwareLicenseIdAndStatus(Long licenseId, AssignmentStatus status);
+
+    long deleteBySoftwareLicenseId(Long licenseId);
 }

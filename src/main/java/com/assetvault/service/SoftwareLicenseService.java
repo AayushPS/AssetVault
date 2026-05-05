@@ -22,10 +22,6 @@ public interface SoftwareLicenseService {
 
     SoftwareLicenseResponse update(Long id, SoftwareLicenseRequest request);
 
-    SoftwareLicenseResponse assign(Long id, Long employeeId);
-
-    SoftwareLicenseResponse revoke(Long id, Long employeeId);
-
     SoftwareLicenseResponse deactivate(Long id);
 
     void delete(Long id);

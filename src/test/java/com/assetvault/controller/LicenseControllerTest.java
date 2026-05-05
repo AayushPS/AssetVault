@@ -1,6 +1,7 @@
 package com.assetvault.controller;
 
 import com.assetvault.exception.LicenseExpiredException;
+import com.assetvault.service.SoftwareAssignmentService;
 import com.assetvault.service.SoftwareLicenseService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,9 +22,12 @@ class LicenseControllerTest {
     @MockitoBean
     private SoftwareLicenseService softwareLicenseService;
 
+    @MockitoBean
+    private SoftwareAssignmentService softwareAssignmentService;
+
     @Test
     void expiredLicenseAssignmentUsesUnprocessableEntityError() throws Exception {
-        when(softwareLicenseService.assign(1L, 7L))
+        when(softwareAssignmentService.assign(1L, 7L))
                 .thenThrow(new LicenseExpiredException("Cannot assign an expired software license"));
 
         mockMvc.perform(patch("/api/v1/licenses/{id}/assign", 1L).param("employeeId", "7"))

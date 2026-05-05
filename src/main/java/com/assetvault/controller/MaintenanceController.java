@@ -113,6 +113,12 @@ public class MaintenanceController {
         return maintenanceService.update(id, request);
     }
 
+    @PatchMapping("/{id}/start")
+    @Operation(summary = "Start maintenance", description = "Moves scheduled maintenance to in-progress.")
+    public MaintenanceRecordResponse start(@PathVariable @Positive Integer id) {
+        return maintenanceService.start(id);
+    }
+
     @PatchMapping("/{id}/complete")
     @Operation(summary = "Complete maintenance", description = "Marks maintenance as completed.")
     public MaintenanceRecordResponse complete(@PathVariable @Positive Integer id) {

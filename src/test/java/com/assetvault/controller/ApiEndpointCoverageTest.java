@@ -25,6 +25,7 @@ import com.assetvault.exception.InactiveEmployeeException;
 import com.assetvault.exception.LicenseAlreadyAssignedException;
 import com.assetvault.exception.LicenseExpiredException;
 import com.assetvault.exception.LicenseNotFoundException;
+import com.assetvault.exception.MaintenanceStateException;
 import com.assetvault.exception.MaintenanceRecordNotFoundException;
 import com.assetvault.exception.NoLicenseSeatsAvailableException;
 import com.assetvault.model.enums.AssetStatus;
@@ -38,6 +39,7 @@ import com.assetvault.service.AssetService;
 import com.assetvault.service.DashboardService;
 import com.assetvault.service.EmployeeService;
 import com.assetvault.service.MaintenanceService;
+import com.assetvault.service.SoftwareAssignmentService;
 import com.assetvault.service.SoftwareLicenseService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -161,6 +163,9 @@ class ApiEndpointCoverageTest {
     private SoftwareLicenseService softwareLicenseService;
 
     @MockitoBean
+    private SoftwareAssignmentService softwareAssignmentService;
+
+    @MockitoBean
     private DashboardService dashboardService;
 
     @BeforeEach
@@ -218,6 +223,7 @@ class ApiEndpointCoverageTest {
         lenient().when(maintenanceService.getScheduled(any(Pageable.class))).thenReturn(new PageImpl<>(List.of(maintenance)));
         lenient().when(maintenanceService.getByDateRange(any(), any(), any(Pageable.class))).thenReturn(new PageImpl<>(List.of(maintenance)));
         lenient().when(maintenanceService.update(anyInt(), any())).thenReturn(maintenance);
+        lenient().when(maintenanceService.start(anyInt())).thenReturn(maintenance);
         lenient().when(maintenanceService.complete(anyInt())).thenReturn(maintenance);
         lenient().when(maintenanceService.cancel(anyInt())).thenReturn(maintenance);
 
@@ -229,8 +235,8 @@ class ApiEndpointCoverageTest {
         lenient().when(softwareLicenseService.getLowSeats(any(Pageable.class))).thenReturn(new PageImpl<>(List.of(license)));
         lenient().when(softwareLicenseService.search(any(), any(Pageable.class))).thenReturn(new PageImpl<>(List.of(license)));
         lenient().when(softwareLicenseService.update(anyLong(), any())).thenReturn(license);
-        lenient().when(softwareLicenseService.assign(anyLong(), anyLong())).thenReturn(license);
-        lenient().when(softwareLicenseService.revoke(anyLong(), anyLong())).thenReturn(license);
+        lenient().when(softwareAssignmentService.assign(anyLong(), anyLong())).thenReturn(license);
+        lenient().when(softwareAssignmentService.revoke(anyLong(), anyLong())).thenReturn(license);
         lenient().when(softwareLicenseService.deactivate(anyLong())).thenReturn(license);
 
         lenient().when(dashboardService.getSummary()).thenReturn(new DashboardSummaryResponse(10, 4, 5, 1, 0));
@@ -337,6 +343,7 @@ class ApiEndpointCoverageTest {
                 endpoint("GET", "/api/v1/maintenance/scheduled", null, 200),
                 endpoint("GET", "/api/v1/maintenance/date-range?from=2026-05-01&to=2026-05-30", null, 200),
                 endpoint("PUT", "/api/v1/maintenance/1", MAINTENANCE_BODY, 200),
+                endpoint("PATCH", "/api/v1/maintenance/1/start", null, 200),
                 endpoint("PATCH", "/api/v1/maintenance/1/complete", null, 200),
                 endpoint("PATCH", "/api/v1/maintenance/1/cancel", null, 200),
                 endpoint("DELETE", "/api/v1/maintenance/1", null, 204),
@@ -381,6 +388,7 @@ class ApiEndpointCoverageTest {
                 exception(new DuplicateSerialNumberException("duplicate serial"), 409, "Conflict"),
                 exception(new DuplicateEmployeeException("duplicate employee"), 409, "Conflict"),
                 exception(new DuplicateLicenseException("duplicate license"), 409, "Conflict"),
+                exception(new MaintenanceStateException("invalid maintenance state"), 409, "Conflict"),
                 exception(new DataIntegrityViolationException("constraint"), 409, "Conflict"),
                 exception(new LicenseExpiredException("expired"), 422, "Unprocessable Entity"),
                 exception(new IllegalArgumentException("bad request"), 400, "Bad Request")
@@ -494,6 +502,7 @@ class ApiEndpointCoverageTest {
                             endpointPageable()
                     )).thenThrow(exception);
             case "PUT /api/v1/maintenance/1" -> when(maintenanceService.update(eq(1), any())).thenThrow(exception);
+            case "PATCH /api/v1/maintenance/1/start" -> when(maintenanceService.start(1)).thenThrow(exception);
             case "PATCH /api/v1/maintenance/1/complete" -> when(maintenanceService.complete(1)).thenThrow(exception);
             case "PATCH /api/v1/maintenance/1/cancel" -> when(maintenanceService.cancel(1)).thenThrow(exception);
             case "DELETE /api/v1/maintenance/1" -> doThrow(exception).when(maintenanceService).delete(1);
@@ -513,9 +522,9 @@ class ApiEndpointCoverageTest {
             case "PUT /api/v1/licenses/1" ->
                     when(softwareLicenseService.update(eq(1L), any())).thenThrow(exception);
             case "PATCH /api/v1/licenses/1/assign" ->
-                    when(softwareLicenseService.assign(1L, 1L)).thenThrow(exception);
+                    when(softwareAssignmentService.assign(1L, 1L)).thenThrow(exception);
             case "PATCH /api/v1/licenses/1/revoke" ->
-                    when(softwareLicenseService.revoke(1L, 1L)).thenThrow(exception);
+                    when(softwareAssignmentService.revoke(1L, 1L)).thenThrow(exception);
             case "PATCH /api/v1/licenses/1/deactivate" ->
                     when(softwareLicenseService.deactivate(1L)).thenThrow(exception);
             case "DELETE /api/v1/licenses/1" -> doThrow(exception).when(softwareLicenseService).delete(1L);

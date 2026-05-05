@@ -6,9 +6,13 @@ import com.assetvault.exception.AssetNotFoundException;
 import com.assetvault.exception.AssetRetiredException;
 import com.assetvault.exception.DuplicateSerialNumberException;
 import com.assetvault.model.Asset;
+import com.assetvault.model.MaintenanceRecord;
 import com.assetvault.model.enums.AssetStatus;
 import com.assetvault.model.enums.AssetType;
+import com.assetvault.model.enums.MaintenanceStatus;
 import com.assetvault.repository.AssetRepository;
+import com.assetvault.repository.MaintenanceRecordRepository;
+import com.assetvault.service.AssetAssignmentService;
 import com.assetvault.service.AssetService;
 import com.assetvault.util.CodeGenerator;
 import com.assetvault.util.Mapper;
@@ -21,12 +25,15 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class AssetServiceImpl implements AssetService {
     private final AssetRepository assetRepository;
+    private final AssetAssignmentService assetAssignmentService;
+    private final MaintenanceRecordRepository maintenanceRecordRepository;
 
     @Override
     @Transactional
@@ -35,7 +42,7 @@ public class AssetServiceImpl implements AssetService {
             throw new DuplicateSerialNumberException("Serial number already exists in the system");
         }
         Asset asset = Asset.builder()
-                .assetCode(generateAssetCode(request.type()))
+                .assetCode(CodeGenerator.pendingAssetCode())
                 .name(request.name())
                 .brand(request.brand())
                 .model(request.model())
@@ -48,7 +55,9 @@ public class AssetServiceImpl implements AssetService {
                 .location(request.location())
                 .notes(request.notes())
                 .build();
-        Asset saved = assetRepository.save(asset);
+        Asset saved = assetRepository.saveAndFlush(asset);
+        saved.setAssetCode(CodeGenerator.assetCode(request.type(), saved.getId()));
+        saved = assetRepository.save(saved);
         log.info("Asset registered: {}", saved.getAssetCode());
         return Mapper.toAssetResponse(saved);
     }
@@ -137,11 +146,18 @@ public class AssetServiceImpl implements AssetService {
         if (assetRepository.existsBySerialNumberAndIdNot(request.serialNumber(), id)) {
             throw new DuplicateSerialNumberException("Serial number already exists in the system");
         }
+        AssetStatus targetStatus = request.status() == null ? asset.getStatus() : request.status();
+        if (targetStatus == AssetStatus.RETIRED) {
+            releaseActiveAssignment(id, "Returned automatically before asset retirement");
+        }
+        if (targetStatus == AssetStatus.LOST) {
+            cancelInProgressMaintenance(asset);
+        }
         asset.setName(request.name());
         asset.setBrand(request.brand());
         asset.setModel(request.model());
         asset.setType(request.type());
-        asset.setStatus(request.status() == null ? asset.getStatus() : request.status());
+        asset.setStatus(targetStatus);
         asset.setPurchaseDate(request.purchaseDate());
         asset.setPurchaseCost(request.purchaseCost());
         asset.setWarrantyExpiryDate(request.warrantyExpiryDate());
@@ -155,20 +171,30 @@ public class AssetServiceImpl implements AssetService {
     @Transactional
     public AssetResponse updateStatus(Long id, AssetStatus status) {
         Asset asset = findAsset(id);
-        if (asset.getStatus() == AssetStatus.RETIRED && status != AssetStatus.RETIRED) {
+        if (asset.getStatus() == AssetStatus.RETIRED
+                && status != AssetStatus.RETIRED) {
             throw new AssetRetiredException("Operation is not allowed on retired asset %s".formatted(asset.getAssetCode()));
         }
+        if (status == AssetStatus.RETIRED) {
+            releaseActiveAssignment(id, "Returned automatically before asset retirement");
+        }
+        if (status == AssetStatus.LOST) {
+            cancelInProgressMaintenance(asset);
+        }
         asset.setStatus(status);
-        return Mapper.toAssetResponse(assetRepository.save(asset));
+        Asset saved = assetRepository.save(asset);
+        log.info("Asset {} status updated to {}", saved.getAssetCode(), saved.getStatus());
+        return Mapper.toAssetResponse(saved);
     }
 
     @Override
     @Transactional
     public AssetResponse retire(Long id) {
         Asset asset = findAsset(id);
+        int releasedAssignments = releaseActiveAssignment(id, "Returned automatically before asset retirement");
         asset.setStatus(AssetStatus.RETIRED);
         Asset saved = assetRepository.save(asset);
-        log.info("Asset retired: {}", saved.getAssetCode());
+        log.info("Asset retired: {} (releasedAssignments={})", saved.getAssetCode(), releasedAssignments);
         return Mapper.toAssetResponse(saved);
     }
 
@@ -177,16 +203,20 @@ public class AssetServiceImpl implements AssetService {
     public AssetResponse markLost(Long id) {
         Asset asset = findAsset(id);
         ensureNotRetired(asset);
+        int cancelledMaintenance = cancelInProgressMaintenance(asset);
         asset.setStatus(AssetStatus.LOST);
-        return Mapper.toAssetResponse(assetRepository.save(asset));
+        Asset saved = assetRepository.save(asset);
+        log.info("Asset marked lost: {} (cancelledMaintenance={})", saved.getAssetCode(), cancelledMaintenance);
+        return Mapper.toAssetResponse(saved);
     }
 
     @Override
     @Transactional
     public void delete(Long id) {
         Asset asset = findAsset(id);
-        ensureNotRetired(asset);
+        int releasedAssignments = releaseActiveAssignment(id, "Returned automatically before asset deletion");
         assetRepository.delete(asset);
+        log.info("Asset deleted: {} (releasedAssignments={})", asset.getAssetCode(), releasedAssignments);
     }
 
     private Asset findAsset(Long id) {
@@ -200,13 +230,21 @@ public class AssetServiceImpl implements AssetService {
         }
     }
 
-    private String generateAssetCode(AssetType type) {
-        long sequence = assetRepository.countByType(type) + 1;
-        String code = CodeGenerator.assetCode(type, sequence);
-        while (assetRepository.existsByAssetCode(code)) {
-            sequence++;
-            code = CodeGenerator.assetCode(type, sequence);
+    private int releaseActiveAssignment(Long assetId, String remarks) {
+        return assetAssignmentService.releaseActiveAssignmentsForAsset(assetId, remarks);
+    }
+
+    private int cancelInProgressMaintenance(Asset asset) {
+        List<MaintenanceRecord> records = maintenanceRecordRepository
+                .findAllByAssetIdAndStatusOrderByScheduledDateDescIdDesc(
+                        asset.getId(),
+                        MaintenanceStatus.IN_PROGRESS
+                );
+        records.forEach(record -> record.setStatus(MaintenanceStatus.CANCELLED));
+        if (!records.isEmpty()) {
+            maintenanceRecordRepository.saveAll(records);
+            log.info("{} in-progress maintenance records cancelled for asset {}", records.size(), asset.getAssetCode());
         }
-        return code;
+        return records.size();
     }
 }

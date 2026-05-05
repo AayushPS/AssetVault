@@ -151,6 +151,14 @@ public class AssetAssignmentServiceImpl implements AssetAssignmentService {
 
     @Override
     @Transactional
+    public int releaseActiveAssignmentsForAsset(Long assetId, String remarks) {
+        return assignmentRepository.findByAssetIdAndStatus(assetId, AssignmentStatus.ACTIVE)
+                .map(assignment -> releaseAssignment(assignment, remarks))
+                .orElse(0);
+    }
+
+    @Override
+    @Transactional
     public void delete(Long id) {
         AssetAssignment assignment = findAssignment(id);
         Asset asset = assignment.getAsset();
@@ -160,6 +168,34 @@ public class AssetAssignmentServiceImpl implements AssetAssignmentService {
             asset.setStatus(AssetStatus.AVAILABLE);
             assetRepository.save(asset);
         }
+    }
+
+    private int releaseAssignment(AssetAssignment assignment, String remarks) {
+        assignment.setStatus(AssignmentStatus.RETURNED);
+        assignment.setReturnedDate(LocalDate.now());
+        assignment.setRemarks(appendRemark(assignment.getRemarks(), remarks));
+        Asset asset = assignment.getAsset();
+        if (asset.getStatus() == AssetStatus.ASSIGNED) {
+            asset.setStatus(AssetStatus.AVAILABLE);
+            assetRepository.save(asset);
+        }
+        assignmentRepository.save(assignment);
+        log.info(
+                "Asset {} automatically unassigned from employee {}",
+                asset.getAssetCode(),
+                assignment.getEmployee().getEmployeeCode()
+        );
+        return 1;
+    }
+
+    private String appendRemark(String current, String addition) {
+        if (addition == null || addition.isBlank()) {
+            return current;
+        }
+        if (current == null || current.isBlank()) {
+            return addition;
+        }
+        return current + "\n" + addition;
     }
 
     private AssetAssignment findAssignment(Long id) {

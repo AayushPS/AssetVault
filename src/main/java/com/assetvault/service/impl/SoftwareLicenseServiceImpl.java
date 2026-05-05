@@ -3,21 +3,14 @@ package com.assetvault.service.impl;
 import com.assetvault.dto.EmployeeResponse;
 import com.assetvault.dto.SoftwareLicenseRequest;
 import com.assetvault.dto.SoftwareLicenseResponse;
-import com.assetvault.exception.AssignmentNotFoundException;
 import com.assetvault.exception.DuplicateLicenseException;
-import com.assetvault.exception.EmployeeNotFoundException;
-import com.assetvault.exception.InactiveEmployeeException;
-import com.assetvault.exception.LicenseAlreadyAssignedException;
-import com.assetvault.exception.LicenseExpiredException;
 import com.assetvault.exception.LicenseNotFoundException;
-import com.assetvault.exception.NoLicenseSeatsAvailableException;
-import com.assetvault.model.Employee;
 import com.assetvault.model.enums.AssignmentStatus;
 import com.assetvault.model.SoftwareAssignment;
 import com.assetvault.model.SoftwareLicense;
-import com.assetvault.repository.EmployeeRepository;
 import com.assetvault.repository.SoftwareAssignmentRepository;
 import com.assetvault.repository.SoftwareLicenseRepository;
+import com.assetvault.service.SoftwareAssignmentService;
 import com.assetvault.service.SoftwareLicenseService;
 import com.assetvault.util.Mapper;
 import lombok.RequiredArgsConstructor;
@@ -36,7 +29,7 @@ import java.util.List;
 public class SoftwareLicenseServiceImpl implements SoftwareLicenseService {
     private final SoftwareLicenseRepository softwareLicenseRepository;
     private final SoftwareAssignmentRepository softwareAssignmentRepository;
-    private final EmployeeRepository employeeRepository;
+    private final SoftwareAssignmentService softwareAssignmentService;
 
     @Override
     @Transactional
@@ -61,6 +54,7 @@ public class SoftwareLicenseServiceImpl implements SoftwareLicenseService {
                 .isActive(request.active() == null || request.active())
                 .build();
         SoftwareLicense saved = softwareLicenseRepository.save(license);
+        log.info("Software license registered: {}", saved.getSoftwareName());
         return toLicenseResponse(saved);
     }
 
@@ -134,79 +128,42 @@ public class SoftwareLicenseServiceImpl implements SoftwareLicenseService {
         license.setPurchaseCost(request.purchaseCost());
         license.setExpiryDate(request.expiryDate());
         license.setIsActive(request.active() == null || request.active());
-        return toLicenseResponse(softwareLicenseRepository.save(license));
-    }
-
-    @Override
-    @Transactional
-    public SoftwareLicenseResponse assign(Long id, Long employeeId) {
-        SoftwareLicense license = findLicense(id);
-        Employee employee = findEmployee(employeeId);
-        if (!employee.isActive()) {
-            throw new InactiveEmployeeException("Cannot assign license to a deactivated employee");
-        }
-        if (!Boolean.TRUE.equals(license.getIsActive())) {
-            throw new NoLicenseSeatsAvailableException("License is inactive");
-        }
-        if (license.getExpiryDate() != null && license.getExpiryDate().isBefore(LocalDate.now())) {
-            throw new LicenseExpiredException("Cannot assign an expired software license");
-        }
-        if (softwareAssignmentRepository.existsByEmployeeIdAndSoftwareLicenseIdAndStatus(
-                employeeId,
-                id,
-                AssignmentStatus.ACTIVE
-        )) {
-            throw new LicenseAlreadyAssignedException("Employee already holds this license");
-        }
-        int usedSeats = activeSeatCount(id);
-        if (usedSeats >= license.getTotalSeats()) {
-            throw new NoLicenseSeatsAvailableException("All seats for this license are already used");
-        }
-        SoftwareAssignment assignment = SoftwareAssignment.builder()
-                .softwareLicense(license)
-                .employee(employee)
-                .seatIndex(usedSeats + 1)
-                .assignedDate(LocalDate.now())
-                .status(AssignmentStatus.ACTIVE)
-                .assignedBy("SYSTEM")
-                .remarks("License seat assigned")
-                .build();
-        softwareAssignmentRepository.save(assignment);
-        license.setUsedSeats(usedSeats + 1);
         SoftwareLicense saved = softwareLicenseRepository.save(license);
-        log.info("Software license {} assigned to employee {}", license.getSoftwareName(), employee.getEmployeeCode());
-        return toLicenseResponse(saved);
-    }
-
-    @Override
-    @Transactional
-    public SoftwareLicenseResponse revoke(Long id, Long employeeId) {
-        SoftwareLicense license = findLicense(id);
-        SoftwareAssignment assignment = softwareAssignmentRepository.findByEmployeeIdAndSoftwareLicenseIdAndStatus(
-                employeeId,
-                id,
-                AssignmentStatus.ACTIVE
-        ).orElseThrow(() -> new AssignmentNotFoundException("Active software assignment does not exist"));
-        assignment.setStatus(AssignmentStatus.RETURNED);
-        assignment.setReturnedDate(LocalDate.now());
-        softwareAssignmentRepository.save(assignment);
-        license.setUsedSeats(Math.max(activeSeatCount(id), 0));
-        SoftwareLicense saved = softwareLicenseRepository.save(license);
+        log.info("Software license updated: {}", saved.getSoftwareName());
         return toLicenseResponse(saved);
     }
 
     @Override
     @Transactional
     public SoftwareLicenseResponse deactivate(Long id) {
-        SoftwareLicense license = findLicense(id);
+        SoftwareLicense license = findLicenseForUpdate(id);
+        int revokedAssignments = softwareAssignmentService.revokeActiveAssignmentsForLicense(
+                id,
+                "License seat returned automatically before license deactivation"
+        );
+        license.setUsedSeats(0);
         license.setIsActive(false);
-        return toLicenseResponse(softwareLicenseRepository.save(license));
+        SoftwareLicense saved = softwareLicenseRepository.save(license);
+        log.info("Software license deactivated: {} (revokedAssignments={})", saved.getSoftwareName(), revokedAssignments);
+        return toLicenseResponse(saved);
     }
 
     @Override
     @Transactional
     public void delete(Long id) {
-        softwareLicenseRepository.delete(findLicense(id));
+        SoftwareLicense license = findLicenseForUpdate(id);
+        int revokedAssignments = softwareAssignmentService.revokeActiveAssignmentsForLicense(
+                id,
+                "License seat returned automatically before license deletion"
+        );
+        long deletedAssignmentRecords = softwareAssignmentService.deleteAssignmentsForLicense(id);
+        softwareLicenseRepository.delete(license);
+        log.info(
+                "Software license deleted: {} (revokedAssignments={}, deletedAssignmentRecords={})",
+                license.getSoftwareName(),
+                revokedAssignments,
+                deletedAssignmentRecords
+        );
     }
 
     private SoftwareLicense findLicense(Long id) {
@@ -214,9 +171,9 @@ public class SoftwareLicenseServiceImpl implements SoftwareLicenseService {
                 .orElseThrow(() -> new LicenseNotFoundException("License ID %d does not exist".formatted(id)));
     }
 
-    private Employee findEmployee(Long id) {
-        return employeeRepository.findById(id)
-                .orElseThrow(() -> new EmployeeNotFoundException("Employee ID %d does not exist".formatted(id)));
+    private SoftwareLicense findLicenseForUpdate(Long id) {
+        return softwareLicenseRepository.findByIdForUpdate(id)
+                .orElseThrow(() -> new LicenseNotFoundException("License ID %d does not exist".formatted(id)));
     }
 
     private SoftwareLicenseResponse toLicenseResponse(SoftwareLicense license) {
@@ -232,10 +189,4 @@ public class SoftwareLicenseServiceImpl implements SoftwareLicenseService {
         return Mapper.toSoftwareLicenseResponse(license, assignedEmployees);
     }
 
-    private int activeSeatCount(Long licenseId) {
-        return Math.toIntExact(softwareAssignmentRepository.countBySoftwareLicenseIdAndStatus(
-                licenseId,
-                AssignmentStatus.ACTIVE
-        ));
-    }
 }

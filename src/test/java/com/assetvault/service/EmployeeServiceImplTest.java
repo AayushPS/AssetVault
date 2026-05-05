@@ -61,8 +61,12 @@ class EmployeeServiceImplTest {
     @Test
     void createAutoGeneratesEmployeeCodeWhenMissing() {
         when(employeeRepository.existsByEmail("aarav@example.com")).thenReturn(false);
-        when(employeeRepository.count()).thenReturn(0L);
-        when(employeeRepository.existsByEmployeeCode("EMP-00001")).thenReturn(false);
+        when(employeeRepository.existsByEmployeeCode(any())).thenReturn(false);
+        when(employeeRepository.saveAndFlush(any(Employee.class))).thenAnswer(invocation -> {
+            Employee saved = invocation.getArgument(0);
+            saved.setId(1L);
+            return saved;
+        });
         when(employeeRepository.save(any(Employee.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         var response = service.create(request(null));

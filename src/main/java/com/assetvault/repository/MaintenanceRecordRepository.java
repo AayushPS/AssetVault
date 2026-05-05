@@ -21,6 +21,11 @@ public interface MaintenanceRecordRepository extends JpaRepository<MaintenanceRe
 
     List<MaintenanceRecord> findAllByAssetIdOrderByScheduledDateDescIdDesc(Long assetId);
 
+    List<MaintenanceRecord> findAllByAssetIdAndStatusOrderByScheduledDateDescIdDesc(
+            Long assetId,
+            MaintenanceStatus status
+    );
+
     Page<MaintenanceRecord> findByStatus(MaintenanceStatus status, Pageable pageable);
 
     List<MaintenanceRecord> findAllByStatus(MaintenanceStatus status);

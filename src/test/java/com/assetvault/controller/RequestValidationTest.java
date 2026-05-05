@@ -2,6 +2,7 @@ package com.assetvault.controller;
 
 import com.assetvault.service.AssetService;
 import com.assetvault.service.AssetAssignmentService;
+import com.assetvault.service.SoftwareAssignmentService;
 import com.assetvault.service.SoftwareLicenseService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,6 +40,9 @@ class RequestValidationTest {
     @MockitoBean
     private SoftwareLicenseService softwareLicenseService;
 
+    @MockitoBean
+    private SoftwareAssignmentService softwareAssignmentService;
+
     @Test
     void queryParameterConstraintViolationsUseStandardErrorShape() throws Exception {
         mockMvc.perform(get("/api/v1/assets/warranty-expiring").param("days", "0"))
@@ -74,7 +78,7 @@ class RequestValidationTest {
                 .andExpect(jsonPath("$.path").value("/api/v1/licenses/1/assign"))
                 .andExpect(jsonPath("$.fieldErrors.employeeId").value("must be provided"));
 
-        verifyNoInteractions(softwareLicenseService);
+        verifyNoInteractions(softwareAssignmentService);
     }
 
     @Test

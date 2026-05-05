@@ -4,9 +4,12 @@ import com.assetvault.model.SoftwareLicense;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import jakarta.persistence.LockModeType;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -17,6 +20,10 @@ public interface SoftwareLicenseRepository extends JpaRepository<SoftwareLicense
     Page<SoftwareLicense> findAll(Pageable pageable);
 
     Optional<SoftwareLicense> findByLicenceKey(String licenceKey);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT sl FROM SoftwareLicense sl WHERE sl.id = :id")
+    Optional<SoftwareLicense> findByIdForUpdate(@Param("id") Long id);
 
     boolean existsByLicenceKey(String licenceKey);
     boolean existsByLicenceKeyAndIdNot(String licenceKey, Long id);
@@ -87,6 +94,7 @@ public interface SoftwareLicenseRepository extends JpaRepository<SoftwareLicense
                     FROM SoftwareLicense sl
                     WHERE
                         sl.usedSeats >= sl.totalSeats
+                        AND sl.licenseType <> com.assetvault.model.enums.LicenseType.INDIVIDUAL
                     ORDER BY
                         sl.softwareName ASC,
                         sl.id ASC
@@ -97,6 +105,7 @@ public interface SoftwareLicenseRepository extends JpaRepository<SoftwareLicense
                     FROM SoftwareLicense sl
                     WHERE
                         sl.usedSeats >= sl.totalSeats
+                        AND sl.licenseType <> com.assetvault.model.enums.LicenseType.INDIVIDUAL
                     """
     )
     Page<SoftwareLicense> findLicensesWithNoRemainingSeats(Pageable pageable);
@@ -107,6 +116,7 @@ public interface SoftwareLicenseRepository extends JpaRepository<SoftwareLicense
             FROM SoftwareLicense sl
             WHERE
                 sl.usedSeats >= sl.totalSeats
+                AND sl.licenseType <> com.assetvault.model.enums.LicenseType.INDIVIDUAL
             ORDER BY
                 sl.softwareName ASC,
                 sl.id ASC

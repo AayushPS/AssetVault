@@ -28,6 +28,8 @@ public interface MaintenanceService {
 
     MaintenanceRecordResponse update(Integer id, MaintenanceRecordRequest request);
 
+    MaintenanceRecordResponse start(Integer id);
+
     MaintenanceRecordResponse complete(Integer id);
 
     MaintenanceRecordResponse cancel(Integer id);

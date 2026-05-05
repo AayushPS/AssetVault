@@ -88,7 +88,11 @@ public class Asset {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
-    @OneToMany(mappedBy = "asset", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "asset", fetch = FetchType.LAZY, cascade = CascadeType.REMOVE, orphanRemoval = true)
     @Builder.Default
     private List<AssetAssignment> assignments = new ArrayList<>();
+
+    @OneToMany(mappedBy = "asset", fetch = FetchType.LAZY, cascade = CascadeType.REMOVE, orphanRemoval = true)
+    @Builder.Default
+    private List<MaintenanceRecord> maintenanceRecords = new ArrayList<>();
 }

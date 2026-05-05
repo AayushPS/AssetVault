@@ -41,7 +41,8 @@ public class EmployeeServiceImpl implements EmployeeService {
         if (employeeRepository.existsByEmail(request.email())) {
             throw new DuplicateEmployeeException("Employee email already exists");
         }
-        String employeeCode = hasText(request.employeeCode()) ? request.employeeCode() : generateEmployeeCode();
+        boolean generatedCode = !hasText(request.employeeCode());
+        String employeeCode = generatedCode ? CodeGenerator.pendingEmployeeCode() : request.employeeCode();
         if (employeeRepository.existsByEmployeeCode(employeeCode)) {
             throw new DuplicateEmployeeException("Employee code already exists");
         }
@@ -53,7 +54,11 @@ public class EmployeeServiceImpl implements EmployeeService {
                 .employeeCode(employeeCode)
                 .isActive(true)
                 .build();
-        Employee saved = employeeRepository.save(employee);
+        Employee saved = generatedCode ? employeeRepository.saveAndFlush(employee) : employeeRepository.save(employee);
+        if (generatedCode) {
+            saved.setEmployeeCode(CodeGenerator.employeeCode(saved.getId()));
+            saved = employeeRepository.save(saved);
+        }
         log.info("Employee registered: {}", saved.getEmployeeCode());
         return Mapper.toEmployeeResponse(saved);
     }
@@ -146,16 +151,6 @@ public class EmployeeServiceImpl implements EmployeeService {
     private Employee findEmployee(Long id) {
         return employeeRepository.findById(id)
                 .orElseThrow(() -> new EmployeeNotFoundException("Employee ID %d does not exist".formatted(id)));
-    }
-
-    private String generateEmployeeCode() {
-        long sequence = employeeRepository.count() + 1;
-        String code = CodeGenerator.employeeCode(sequence);
-        while (employeeRepository.existsByEmployeeCode(code)) {
-            sequence++;
-            code = CodeGenerator.employeeCode(sequence);
-        }
-        return code;
     }
 
     private SoftwareLicenseResponse toLicenseResponse(SoftwareLicense license) {

@@ -2,6 +2,7 @@ package com.assetvault.controller;
 
 import com.assetvault.dto.SoftwareLicenseRequest;
 import com.assetvault.dto.SoftwareLicenseResponse;
+import com.assetvault.service.SoftwareAssignmentService;
 import com.assetvault.service.SoftwareLicenseService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -35,6 +36,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "Software Licenses", description = "Software license inventory, seats, expiry, and assignment APIs")
 public class LicenseController {
     private final SoftwareLicenseService softwareLicenseService;
+    private final SoftwareAssignmentService softwareAssignmentService;
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -99,7 +101,7 @@ public class LicenseController {
             @PathVariable @Positive Long id,
             @RequestParam @Positive Long employeeId
     ) {
-        return softwareLicenseService.assign(id, employeeId);
+        return softwareAssignmentService.assign(id, employeeId);
     }
 
     @PatchMapping("/{id}/revoke")
@@ -108,7 +110,7 @@ public class LicenseController {
             @PathVariable @Positive Long id,
             @RequestParam @Positive Long employeeId
     ) {
-        return softwareLicenseService.revoke(id, employeeId);
+        return softwareAssignmentService.revoke(id, employeeId);
     }
 
     @PatchMapping("/{id}/deactivate")

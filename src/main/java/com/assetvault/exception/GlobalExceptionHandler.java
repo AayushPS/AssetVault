@@ -45,7 +45,8 @@ public class GlobalExceptionHandler {
             EmployeeHasActiveAssetsException.class,
             DuplicateSerialNumberException.class,
             DuplicateEmployeeException.class,
-            DuplicateLicenseException.class
+            DuplicateLicenseException.class,
+            MaintenanceStateException.class
     })
     public ResponseEntity<ErrorResponse> handleConflict(RuntimeException ex, HttpServletRequest request) {
         return error(HttpStatus.CONFLICT, ex.getMessage(), request, null, ex);

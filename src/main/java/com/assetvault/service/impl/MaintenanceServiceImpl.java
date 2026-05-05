@@ -4,6 +4,7 @@ import com.assetvault.dto.MaintenanceRecordRequest;
 import com.assetvault.dto.MaintenanceRecordResponse;
 import com.assetvault.exception.AssetNotFoundException;
 import com.assetvault.exception.AssetRetiredException;
+import com.assetvault.exception.MaintenanceStateException;
 import com.assetvault.exception.MaintenanceRecordNotFoundException;
 import com.assetvault.model.Asset;
 import com.assetvault.model.enums.AssetStatus;
@@ -133,8 +134,23 @@ public class MaintenanceServiceImpl implements MaintenanceService {
 
     @Override
     @Transactional
+    public MaintenanceRecordResponse start(Integer id) {
+        MaintenanceRecord record = findRecord(id);
+        ensureRecordStatus(record, MaintenanceStatus.SCHEDULED, "start");
+        ensureNotRetired(record.getAsset());
+        record.setStatus(MaintenanceStatus.IN_PROGRESS);
+        syncAssetForMaintenance(record.getAsset(), MaintenanceStatus.IN_PROGRESS, record.getId());
+        MaintenanceRecord saved = maintenanceRecordRepository.save(record);
+        log.info("Maintenance record {} started", id);
+        return Mapper.toMaintenanceResponse(saved);
+    }
+
+    @Override
+    @Transactional
     public MaintenanceRecordResponse complete(Integer id) {
         MaintenanceRecord record = findRecord(id);
+        ensureRecordStatus(record, MaintenanceStatus.IN_PROGRESS, "complete");
+        ensureAssetUnderMaintenance(record.getAsset(), "complete");
         record.setStatus(MaintenanceStatus.COMPLETED);
         record.setCompletedDate(LocalDate.now());
         restoreAssetStatus(record.getAsset(), record.getId());
@@ -147,9 +163,13 @@ public class MaintenanceServiceImpl implements MaintenanceService {
     @Transactional
     public MaintenanceRecordResponse cancel(Integer id) {
         MaintenanceRecord record = findRecord(id);
+        ensureRecordStatus(record, MaintenanceStatus.SCHEDULED, "cancel");
+        ensureAssetUnderMaintenance(record.getAsset(), "cancel");
         record.setStatus(MaintenanceStatus.CANCELLED);
         restoreAssetStatus(record.getAsset(), record.getId());
-        return Mapper.toMaintenanceResponse(maintenanceRecordRepository.save(record));
+        MaintenanceRecord saved = maintenanceRecordRepository.save(record);
+        log.info("Maintenance record {} cancelled", id);
+        return Mapper.toMaintenanceResponse(saved);
     }
 
     @Override
@@ -179,6 +199,24 @@ public class MaintenanceServiceImpl implements MaintenanceService {
     private void ensureNotRetired(Asset asset) {
         if (asset.getStatus() == AssetStatus.RETIRED) {
             throw new AssetRetiredException("Operation is not allowed on retired asset %s".formatted(asset.getAssetCode()));
+        }
+    }
+
+    private void ensureRecordStatus(MaintenanceRecord record, MaintenanceStatus requiredStatus, String action) {
+        if (record.getStatus() != requiredStatus) {
+            throw new MaintenanceStateException(
+                    "Maintenance record %d must be %s before it can be %s"
+                            .formatted(record.getId(), requiredStatus, action)
+            );
+        }
+    }
+
+    private void ensureAssetUnderMaintenance(Asset asset, String action) {
+        if (asset.getStatus() != AssetStatus.UNDER_MAINTENANCE) {
+            throw new MaintenanceStateException(
+                    "Asset %s must be UNDER_MAINTENANCE before maintenance can be %s"
+                            .formatted(asset.getAssetCode(), action)
+            );
         }
     }
 

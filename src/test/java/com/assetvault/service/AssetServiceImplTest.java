@@ -6,7 +6,9 @@ import com.assetvault.exception.DuplicateSerialNumberException;
 import com.assetvault.model.Asset;
 import com.assetvault.model.enums.AssetStatus;
 import com.assetvault.model.enums.AssetType;
+import com.assetvault.model.enums.MaintenanceStatus;
 import com.assetvault.repository.AssetRepository;
+import com.assetvault.repository.MaintenanceRecordRepository;
 import com.assetvault.service.impl.AssetServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,28 +35,39 @@ class AssetServiceImplTest {
     @Mock
     private AssetRepository assetRepository;
 
+    @Mock
+    private AssetAssignmentService assetAssignmentService;
+
+    @Mock
+    private MaintenanceRecordRepository maintenanceRecordRepository;
+
     private AssetServiceImpl service;
 
     @BeforeEach
     void setUp() {
-        service = new AssetServiceImpl(assetRepository);
+        service = new AssetServiceImpl(assetRepository, assetAssignmentService, maintenanceRecordRepository);
     }
 
     @Test
-    void deleteRejectsRetiredAsset() {
+    void deleteReleasesActiveAssignmentAndDeletesEvenWhenRetired() {
         Asset retiredAsset = asset(AssetStatus.RETIRED);
         when(assetRepository.findById(1L)).thenReturn(Optional.of(retiredAsset));
+        when(assetAssignmentService.releaseActiveAssignmentsForAsset(1L, "Returned automatically before asset deletion"))
+                .thenReturn(1);
 
-        assertThatThrownBy(() -> service.delete(1L)).isInstanceOf(AssetRetiredException.class);
+        service.delete(1L);
 
-        verify(assetRepository, never()).delete(retiredAsset);
+        verify(assetRepository).delete(retiredAsset);
     }
 
     @Test
     void createGeneratesCodeAndDefaultsStatusToAvailable() {
         when(assetRepository.existsBySerialNumber("SER-001")).thenReturn(false);
-        when(assetRepository.countByType(AssetType.LAPTOP)).thenReturn(0L);
-        when(assetRepository.existsByAssetCode("LPT-00001")).thenReturn(false);
+        when(assetRepository.saveAndFlush(any(Asset.class))).thenAnswer(invocation -> {
+            Asset saved = invocation.getArgument(0);
+            saved.setId(1L);
+            return saved;
+        });
         when(assetRepository.save(any(Asset.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         var response = service.create(request(null));
@@ -95,6 +108,8 @@ class AssetServiceImplTest {
         when(assetRepository.findById(1L)).thenReturn(Optional.of(asset(AssetStatus.RETIRED)));
 
         assertThatThrownBy(() -> service.updateStatus(1L, AssetStatus.AVAILABLE))
+                .isInstanceOf(AssetRetiredException.class);
+        assertThatThrownBy(() -> service.updateStatus(1L, AssetStatus.LOST))
                 .isInstanceOf(AssetRetiredException.class);
     }
 
@@ -140,6 +155,11 @@ class AssetServiceImplTest {
         when(assetRepository.findById(4L)).thenReturn(Optional.of(lostAsset));
         when(assetRepository.findById(5L)).thenReturn(Optional.of(deleteAsset));
         when(assetRepository.existsBySerialNumberAndIdNot("SER-001", 1L)).thenReturn(false);
+        when(assetAssignmentService.releaseActiveAssignmentsForAsset(any(), any())).thenReturn(1);
+        when(maintenanceRecordRepository.findAllByAssetIdAndStatusOrderByScheduledDateDescIdDesc(
+                1L,
+                MaintenanceStatus.IN_PROGRESS
+        )).thenReturn(List.of());
         when(assetRepository.save(any(Asset.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         assertThat(service.update(1L, request(AssetStatus.AVAILABLE)).name()).isEqualTo("MacBook Pro 14");
@@ -148,7 +168,22 @@ class AssetServiceImplTest {
         assertThat(service.markLost(4L).status()).isEqualTo(AssetStatus.LOST);
         service.delete(5L);
 
+        verify(assetAssignmentService).releaseActiveAssignmentsForAsset(3L, "Returned automatically before asset retirement");
+        verify(assetAssignmentService).releaseActiveAssignmentsForAsset(5L, "Returned automatically before asset deletion");
         verify(assetRepository).delete(deleteAsset);
+    }
+
+    @Test
+    void markLostRejectsRetiredAssetWithoutCancellingMaintenance() {
+        Asset retiredAsset = asset(AssetStatus.RETIRED);
+        when(assetRepository.findById(1L)).thenReturn(Optional.of(retiredAsset));
+
+        assertThatThrownBy(() -> service.markLost(1L))
+                .isInstanceOf(AssetRetiredException.class);
+
+        verify(maintenanceRecordRepository, never())
+                .findAllByAssetIdAndStatusOrderByScheduledDateDescIdDesc(1L, MaintenanceStatus.IN_PROGRESS);
+        verify(assetRepository, never()).save(any());
     }
 
     private AssetRequest request(AssetStatus status) {

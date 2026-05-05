@@ -2,6 +2,7 @@ package com.assetvault.service;
 
 import com.assetvault.dto.MaintenanceRecordRequest;
 import com.assetvault.exception.AssetRetiredException;
+import com.assetvault.exception.MaintenanceStateException;
 import com.assetvault.model.Asset;
 import com.assetvault.model.enums.AssetStatus;
 import com.assetvault.model.enums.AssetType;
@@ -73,6 +74,32 @@ class MaintenanceServiceImplTest {
     }
 
     @Test
+    void startScheduledMaintenanceMovesRecordInProgressAndAssetUnderMaintenance() {
+        Asset asset = asset(AssetStatus.AVAILABLE);
+        MaintenanceRecord record = record(asset, MaintenanceStatus.SCHEDULED);
+        when(maintenanceRecordRepository.findById(10)).thenReturn(Optional.of(record));
+        when(maintenanceRecordRepository.save(any(MaintenanceRecord.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        service.start(10);
+
+        assertThat(record.getStatus()).isEqualTo(MaintenanceStatus.IN_PROGRESS);
+        assertThat(asset.getStatus()).isEqualTo(AssetStatus.UNDER_MAINTENANCE);
+        verify(assetRepository).save(asset);
+    }
+
+    @Test
+    void startRejectsRecordThatIsNotScheduled() {
+        Asset asset = asset(AssetStatus.UNDER_MAINTENANCE);
+        MaintenanceRecord record = record(asset, MaintenanceStatus.IN_PROGRESS);
+        when(maintenanceRecordRepository.findById(10)).thenReturn(Optional.of(record));
+
+        assertThatThrownBy(() -> service.start(10))
+                .isInstanceOf(MaintenanceStateException.class)
+                .hasMessageContaining("SCHEDULED");
+    }
+
+    @Test
     void completeRestoresAssignedStatusWhenAssetHasActiveAssignment() {
         Asset asset = asset(AssetStatus.UNDER_MAINTENANCE);
         MaintenanceRecord record = record(asset, MaintenanceStatus.IN_PROGRESS);
@@ -118,6 +145,28 @@ class MaintenanceServiceImplTest {
         assertThat(record.getStatus()).isEqualTo(MaintenanceStatus.COMPLETED);
         assertThat(asset.getStatus()).isEqualTo(AssetStatus.UNDER_MAINTENANCE);
         verify(assetRepository).save(asset);
+    }
+
+    @Test
+    void completeRejectsRecordThatIsNotInProgress() {
+        Asset asset = asset(AssetStatus.UNDER_MAINTENANCE);
+        MaintenanceRecord record = record(asset, MaintenanceStatus.SCHEDULED);
+        when(maintenanceRecordRepository.findById(10)).thenReturn(Optional.of(record));
+
+        assertThatThrownBy(() -> service.complete(10))
+                .isInstanceOf(MaintenanceStateException.class)
+                .hasMessageContaining("IN_PROGRESS");
+    }
+
+    @Test
+    void cancelRejectsAssetThatIsNotUnderMaintenance() {
+        Asset asset = asset(AssetStatus.AVAILABLE);
+        MaintenanceRecord record = record(asset, MaintenanceStatus.SCHEDULED);
+        when(maintenanceRecordRepository.findById(10)).thenReturn(Optional.of(record));
+
+        assertThatThrownBy(() -> service.cancel(10))
+                .isInstanceOf(MaintenanceStateException.class)
+                .hasMessageContaining("UNDER_MAINTENANCE");
     }
 
     @Test

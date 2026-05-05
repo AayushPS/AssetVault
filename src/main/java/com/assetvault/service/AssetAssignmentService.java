@@ -26,5 +26,7 @@ public interface AssetAssignmentService {
 
     AssetAssignmentResponse transfer(Long id, Long toEmployeeId);
 
+    int releaseActiveAssignmentsForAsset(Long assetId, String remarks);
+
     void delete(Long id);
 }

@@ -1,25 +1,16 @@
 package com.assetvault.service;
 
 import com.assetvault.dto.SoftwareLicenseRequest;
-import com.assetvault.exception.AssignmentNotFoundException;
 import com.assetvault.exception.DuplicateLicenseException;
-import com.assetvault.exception.InactiveEmployeeException;
-import com.assetvault.exception.LicenseAlreadyAssignedException;
-import com.assetvault.exception.LicenseExpiredException;
-import com.assetvault.exception.NoLicenseSeatsAvailableException;
-import com.assetvault.model.Employee;
+import com.assetvault.model.SoftwareLicense;
 import com.assetvault.model.enums.AssignmentStatus;
 import com.assetvault.model.enums.LicenseType;
-import com.assetvault.model.SoftwareAssignment;
-import com.assetvault.model.SoftwareLicense;
-import com.assetvault.repository.EmployeeRepository;
 import com.assetvault.repository.SoftwareAssignmentRepository;
 import com.assetvault.repository.SoftwareLicenseRepository;
 import com.assetvault.service.impl.SoftwareLicenseServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
@@ -44,7 +35,7 @@ class SoftwareLicenseServiceImplTest {
     private SoftwareAssignmentRepository softwareAssignmentRepository;
 
     @Mock
-    private EmployeeRepository employeeRepository;
+    private SoftwareAssignmentService softwareAssignmentService;
 
     private SoftwareLicenseServiceImpl service;
 
@@ -53,17 +44,8 @@ class SoftwareLicenseServiceImplTest {
         service = new SoftwareLicenseServiceImpl(
                 softwareLicenseRepository,
                 softwareAssignmentRepository,
-                employeeRepository
+                softwareAssignmentService
         );
-    }
-
-    @Test
-    void assignRejectsExpiredLicense() {
-        when(softwareLicenseRepository.findById(1L)).thenReturn(Optional.of(license(1, LocalDate.now().minusDays(1))));
-        when(employeeRepository.findById(1L)).thenReturn(Optional.of(employee()));
-
-        assertThatThrownBy(() -> service.assign(1L, 1L))
-                .isInstanceOf(LicenseExpiredException.class);
     }
 
     @Test
@@ -104,136 +86,6 @@ class SoftwareLicenseServiceImplTest {
     }
 
     @Test
-    void assignRejectsInactiveEmployee() {
-        when(softwareLicenseRepository.findById(1L)).thenReturn(Optional.of(license(1, LocalDate.now().plusDays(30))));
-        when(employeeRepository.findById(1L)).thenReturn(Optional.of(employee(false)));
-
-        assertThatThrownBy(() -> service.assign(1L, 1L))
-                .isInstanceOf(InactiveEmployeeException.class);
-    }
-
-    @Test
-    void assignRejectsInactiveLicense() {
-        SoftwareLicense license = license(1, LocalDate.now().plusDays(30));
-        license.setIsActive(false);
-        when(softwareLicenseRepository.findById(1L)).thenReturn(Optional.of(license));
-        when(employeeRepository.findById(1L)).thenReturn(Optional.of(employee()));
-
-        assertThatThrownBy(() -> service.assign(1L, 1L))
-                .isInstanceOf(NoLicenseSeatsAvailableException.class)
-                .hasMessageContaining("inactive");
-    }
-
-    @Test
-    void assignRejectsEmployeeAlreadyHoldingLicense() {
-        when(softwareLicenseRepository.findById(1L)).thenReturn(Optional.of(license(2, LocalDate.now().plusDays(30))));
-        when(employeeRepository.findById(1L)).thenReturn(Optional.of(employee()));
-        when(softwareAssignmentRepository.existsByEmployeeIdAndSoftwareLicenseIdAndStatus(
-                1L,
-                1L,
-                AssignmentStatus.ACTIVE
-        )).thenReturn(true);
-
-        assertThatThrownBy(() -> service.assign(1L, 1L))
-                .isInstanceOf(LicenseAlreadyAssignedException.class);
-    }
-
-    @Test
-    void assignRejectsWhenSeatsAreExhausted() {
-        when(softwareLicenseRepository.findById(1L)).thenReturn(Optional.of(license(1, LocalDate.now().plusDays(30))));
-        when(employeeRepository.findById(1L)).thenReturn(Optional.of(employee()));
-        when(softwareAssignmentRepository.existsByEmployeeIdAndSoftwareLicenseIdAndStatus(
-                1L,
-                1L,
-                AssignmentStatus.ACTIVE
-        )).thenReturn(false);
-        when(softwareAssignmentRepository.countBySoftwareLicenseIdAndStatus(1L, AssignmentStatus.ACTIVE)).thenReturn(1L);
-
-        assertThatThrownBy(() -> service.assign(1L, 1L))
-                .isInstanceOf(NoLicenseSeatsAvailableException.class);
-    }
-
-    @Test
-    void assignConsumesASeat() {
-        SoftwareLicense license = license(2, LocalDate.now().plusDays(30));
-        Employee employee = employee();
-        when(softwareLicenseRepository.findById(1L)).thenReturn(Optional.of(license));
-        when(employeeRepository.findById(1L)).thenReturn(Optional.of(employee));
-        when(softwareAssignmentRepository.existsByEmployeeIdAndSoftwareLicenseIdAndStatus(
-                1L,
-                1L,
-                AssignmentStatus.ACTIVE
-        )).thenReturn(false);
-        when(softwareAssignmentRepository.countBySoftwareLicenseIdAndStatus(1L, AssignmentStatus.ACTIVE)).thenReturn(0L);
-        when(softwareAssignmentRepository.save(any(SoftwareAssignment.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        when(softwareLicenseRepository.save(any(SoftwareLicense.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        when(softwareAssignmentRepository.findAllBySoftwareLicenseIdAndStatusOrderByAssignedDateDescIdDesc(
-                1L,
-                AssignmentStatus.ACTIVE
-        )).thenReturn(List.of());
-
-        service.assign(1L, 1L);
-
-        assertThat(license.getUsedSeats()).isEqualTo(1);
-        ArgumentCaptor<SoftwareAssignment> captor = ArgumentCaptor.forClass(SoftwareAssignment.class);
-        verify(softwareAssignmentRepository).save(captor.capture());
-        SoftwareAssignment savedAssignment = captor.getValue();
-        assertThat(savedAssignment.getSoftwareLicense()).isSameAs(license);
-        assertThat(savedAssignment.getEmployee()).isSameAs(employee);
-        assertThat(savedAssignment.getSeatIndex()).isEqualTo(1);
-        assertThat(savedAssignment.getAssignedDate()).isEqualTo(LocalDate.now());
-        assertThat(savedAssignment.getStatus()).isEqualTo(AssignmentStatus.ACTIVE);
-        assertThat(savedAssignment.getAssignedBy()).isEqualTo("SYSTEM");
-        assertThat(savedAssignment.getRemarks()).isEqualTo("License seat assigned");
-    }
-
-    @Test
-    void revokeReturnsSeatToPool() {
-        SoftwareLicense license = license(2, LocalDate.now().plusDays(30));
-        license.setUsedSeats(1);
-        SoftwareAssignment assignment = SoftwareAssignment.builder()
-                .softwareLicense(license)
-                .employee(employee())
-                .seatIndex(1)
-                .assignedDate(LocalDate.now())
-                .status(AssignmentStatus.ACTIVE)
-                .assignedBy("SYSTEM")
-                .build();
-        when(softwareLicenseRepository.findById(1L)).thenReturn(Optional.of(license));
-        when(softwareAssignmentRepository.findByEmployeeIdAndSoftwareLicenseIdAndStatus(
-                1L,
-                1L,
-                AssignmentStatus.ACTIVE
-        )).thenReturn(Optional.of(assignment));
-        when(softwareAssignmentRepository.save(any(SoftwareAssignment.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        when(softwareAssignmentRepository.countBySoftwareLicenseIdAndStatus(1L, AssignmentStatus.ACTIVE)).thenReturn(0L);
-        when(softwareLicenseRepository.save(any(SoftwareLicense.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        when(softwareAssignmentRepository.findAllBySoftwareLicenseIdAndStatusOrderByAssignedDateDescIdDesc(
-                1L,
-                AssignmentStatus.ACTIVE
-        )).thenReturn(List.of());
-
-        service.revoke(1L, 1L);
-
-        assertThat(assignment.getStatus()).isEqualTo(AssignmentStatus.RETURNED);
-        assertThat(license.getUsedSeats()).isZero();
-    }
-
-    @Test
-    void revokeRejectsWhenEmployeeDoesNotHoldActiveSeat() {
-        when(softwareLicenseRepository.findById(1L)).thenReturn(Optional.of(license(2, LocalDate.now().plusDays(30))));
-        when(softwareAssignmentRepository.findByEmployeeIdAndSoftwareLicenseIdAndStatus(
-                1L,
-                1L,
-                AssignmentStatus.ACTIVE
-        )).thenReturn(Optional.empty());
-
-        assertThatThrownBy(() -> service.revoke(1L, 1L))
-                .isInstanceOf(AssignmentNotFoundException.class)
-                .hasMessageContaining("Active software assignment");
-    }
-
-    @Test
     void readMethodsCoverRepositoryQueries() {
         SoftwareLicense license = license(2, LocalDate.now().plusDays(30));
         var pageable = PageRequest.of(0, 10);
@@ -262,20 +114,27 @@ class SoftwareLicenseServiceImplTest {
         SoftwareLicense deactivateLicense = license(2, LocalDate.now().plusDays(30));
         SoftwareLicense deleteLicense = license(2, LocalDate.now().plusDays(30));
         when(softwareLicenseRepository.findById(1L)).thenReturn(Optional.of(updateLicense));
-        when(softwareLicenseRepository.findById(2L)).thenReturn(Optional.of(deactivateLicense));
-        when(softwareLicenseRepository.findById(3L)).thenReturn(Optional.of(deleteLicense));
+        when(softwareLicenseRepository.findByIdForUpdate(2L)).thenReturn(Optional.of(deactivateLicense));
+        when(softwareLicenseRepository.findByIdForUpdate(3L)).thenReturn(Optional.of(deleteLicense));
         when(softwareLicenseRepository.existsByLicenceKeyAndIdNot("LIC-001", 1L)).thenReturn(false);
         when(softwareLicenseRepository.save(any(SoftwareLicense.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(softwareAssignmentRepository.findAllBySoftwareLicenseIdAndStatusOrderByAssignedDateDescIdDesc(
                 1L,
                 AssignmentStatus.ACTIVE
         )).thenReturn(List.of());
+        when(softwareAssignmentService.revokeActiveAssignmentsForLicense(2L, "License seat returned automatically before license deactivation"))
+                .thenReturn(2);
+        when(softwareAssignmentService.revokeActiveAssignmentsForLicense(3L, "License seat returned automatically before license deletion"))
+                .thenReturn(1);
+        when(softwareAssignmentService.deleteAssignmentsForLicense(3L)).thenReturn(3L);
 
         assertThat(service.update(1L, request(2, 1)).usedSeats()).isEqualTo(1);
         assertThat(service.deactivate(2L).active()).isFalse();
         service.delete(3L);
 
+        assertThat(deactivateLicense.getUsedSeats()).isZero();
         verify(softwareLicenseRepository).delete(deleteLicense);
+        verify(softwareAssignmentService).deleteAssignmentsForLicense(3L);
     }
 
     @Test
@@ -323,22 +182,6 @@ class SoftwareLicenseServiceImplTest {
                 .purchaseDate(LocalDate.now())
                 .expiryDate(expiryDate)
                 .isActive(true)
-                .build();
-    }
-
-    private Employee employee() {
-        return employee(true);
-    }
-
-    private Employee employee(boolean active) {
-        return Employee.builder()
-                .id(1L)
-                .name("Aarav")
-                .email("aarav@example.com")
-                .department("Engineering")
-                .designation("Engineer")
-                .employeeCode("EMP-00001")
-                .isActive(active)
                 .build();
     }
 }
