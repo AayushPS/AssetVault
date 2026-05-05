@@ -8,7 +8,7 @@
 		<version>4.0.6</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
-	<groupId>com.Gemini</groupId>
+	<groupId>com.assetvault</groupId>
 	<artifactId>AssetVault</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name/>
@@ -49,6 +49,10 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-webmvc</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-aspectj</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.springdoc</groupId>
@@ -177,7 +181,7 @@
 									<rule>
 										<element>PACKAGE</element>
 										<includes>
-											<include>com.Gemini.AssetVault.Controller</include>
+											<include>com.assetvault.controller</include>
 										</includes>
 									<limits>
 										<limit>
@@ -190,7 +194,7 @@
 									<rule>
 										<element>PACKAGE</element>
 										<includes>
-											<include>com.Gemini.AssetVault.Service.Impl</include>
+											<include>com.assetvault.service.impl</include>
 										</includes>
 									<limits>
 										<limit>
