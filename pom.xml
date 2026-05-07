@@ -11,20 +11,26 @@
 	<groupId>com.assetvault</groupId>
 	<artifactId>AssetVault</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name/>
-	<description/>
-	<url/>
+	<name>AssetVault</name>
+	<description>Internal IT Asset Management REST API for tracking assets, employees, assignments, maintenance, and software licenses</description>
+	<url>https://github.com/AayushPS/AssetVault</url>
 	<licenses>
-		<license/>
+		<license>
+			<name>MIT License</name>
+			<url>https://opensource.org/licenses/MIT</url>
+		</license>
 	</licenses>
 	<developers>
-		<developer/>
+		<developer>
+			<name>Aayush Singh</name>
+			<url>https://github.com/AayushPS</url>
+		</developer>
 	</developers>
 	<scm>
-		<connection/>
-		<developerConnection/>
-		<tag/>
-		<url/>
+		<connection>scm:git:git://github.com/AayushPS/AssetVault.git</connection>
+		<developerConnection>scm:git:ssh://github.com/AayushPS/AssetVault.git</developerConnection>
+		<tag>HEAD</tag>
+		<url>https://github.com/AayushPS/AssetVault</url>
 	</scm>
 	<properties>
 		<java.version>21</java.version>
