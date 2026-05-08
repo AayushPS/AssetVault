@@ -10,6 +10,18 @@ import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+/**
+ * Request payload for maintenance record operations.
+ *
+ * @param assetId the asset identifier
+ * @param maintenanceType the maintenance type value
+ * @param description the description value
+ * @param maintenanceCost the maintenance cost value
+ * @param vendor the vendor value
+ * @param scheduledDate the scheduled date value
+ * @param completedDate the completed date value
+ * @param status the requested status value
+ */
 @Schema(
         description = "Request payload for creating or updating maintenance records",
         example = "{\"assetId\":1,\"maintenanceType\":\"REPAIR\",\"description\":\"Keyboard replacement\",\"maintenanceCost\":3500.00,\"vendor\":\"Apple Service\",\"scheduledDate\":\"2026-05-10\",\"completedDate\":\"2026-05-12\",\"status\":\"SCHEDULED\"}"

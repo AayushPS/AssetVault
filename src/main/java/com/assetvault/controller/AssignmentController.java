@@ -29,6 +29,9 @@ import org.springframework.validation.annotation.Validated;
 
 import java.time.LocalDate;
 
+/**
+ * REST controller for assignment operations.
+ */
 @Validated
 @RestController
 @RequiredArgsConstructor
@@ -37,6 +40,12 @@ import java.time.LocalDate;
 public class AssignmentController {
     private final AssetAssignmentService assignmentService;
 
+    /**
+     * Assigns the requested assignment.
+     *
+     * @param request the request payload
+     * @return the resulting assignment
+     */
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Assign asset", description = "Assigns an available asset to an active employee.")
@@ -44,24 +53,49 @@ public class AssignmentController {
         return assignmentService.assign(request);
     }
 
+    /**
+     * Returns the requested page of assignments.
+     *
+     * @param pageable the pagination and sorting information
+     * @return the requested page of results
+     */
     @GetMapping
     @Operation(summary = "Get all assignments", description = "Returns paginated asset assignments.")
     public Page<AssetAssignmentResponse> getAll(@ParameterObject @PageableDefault(sort = "id") Pageable pageable) {
         return assignmentService.getAll(pageable);
     }
 
+    /**
+     * Returns the assignment identified by the given id.
+     *
+     * @param id the database identifier
+     * @return the resulting assignment
+     */
     @GetMapping("/{id}")
     @Operation(summary = "Get assignment by ID", description = "Returns an asset assignment by id.")
     public AssetAssignmentResponse getById(@PathVariable @Positive Long id) {
         return assignmentService.getById(id);
     }
 
+    /**
+     * Executes the active operation.
+     *
+     * @param pageable the pagination and sorting information
+     * @return the requested page of results
+     */
     @GetMapping("/active")
     @Operation(summary = "Get active assignments", description = "Returns all active asset assignments.")
     public Page<AssetAssignmentResponse> active(@ParameterObject @PageableDefault(sort = "id") Pageable pageable) {
         return assignmentService.getActive(pageable);
     }
 
+    /**
+     * Executes the by asset operation.
+     *
+     * @param assetId the asset identifier
+     * @param pageable the pagination and sorting information
+     * @return the requested page of results
+     */
     @GetMapping("/asset/{assetId}")
     @Operation(summary = "Get asset assignment history", description = "Returns full assignment history for an asset.")
     public Page<AssetAssignmentResponse> byAsset(
@@ -71,6 +105,13 @@ public class AssignmentController {
         return assignmentService.getByAsset(assetId, pageable);
     }
 
+    /**
+     * Executes the by employee operation.
+     *
+     * @param employeeId the employee identifier
+     * @param pageable the pagination and sorting information
+     * @return the requested page of results
+     */
     @GetMapping("/employee/{employeeId}")
     @Operation(summary = "Get employee assignment history", description = "Returns full assignment history for an employee.")
     public Page<AssetAssignmentResponse> byEmployee(
@@ -80,6 +121,14 @@ public class AssignmentController {
         return assignmentService.getByEmployee(employeeId, pageable);
     }
 
+    /**
+     * Executes the by date range operation.
+     *
+     * @param from the window start date
+     * @param to the window end date
+     * @param pageable the pagination and sorting information
+     * @return the requested page of results
+     */
     @GetMapping("/date-range")
     @Operation(summary = "Get assignments by date range", description = "Returns assignments whose assignment date is within a range.")
     public Page<AssetAssignmentResponse> byDateRange(
@@ -90,12 +139,25 @@ public class AssignmentController {
         return assignmentService.getByDateRange(from, to, pageable);
     }
 
+    /**
+     * Returns the assigned asset to the available pool.
+     *
+     * @param id the database identifier
+     * @return the resulting assignment
+     */
     @PatchMapping("/{id}/return")
     @Operation(summary = "Return asset", description = "Marks an active assignment as returned and frees the asset.")
     public AssetAssignmentResponse returnAsset(@PathVariable @Positive Long id) {
         return assignmentService.returnAsset(id);
     }
 
+    /**
+     * Transfers the current assignment to a different employee.
+     *
+     * @param id the database identifier
+     * @param toEmployeeId the target employee identifier
+     * @return the resulting assignment
+     */
     @PatchMapping("/{id}/transfer")
     @Operation(summary = "Transfer asset", description = "Transfers an active assignment to another active employee.")
     public AssetAssignmentResponse transfer(
@@ -105,6 +167,11 @@ public class AssignmentController {
         return assignmentService.transfer(id, toEmployeeId);
     }
 
+    /**
+     * Deletes the assignment.
+     *
+     * @param id the database identifier
+     */
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(summary = "Delete assignment", description = "Deletes an assignment record.")

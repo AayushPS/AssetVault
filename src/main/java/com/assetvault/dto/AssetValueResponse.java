@@ -4,6 +4,11 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.math.BigDecimal;
 
+/**
+ * Response payload describing asset value data.
+ *
+ * @param totalActiveAssetValue the total active asset value value
+ */
 @Schema(
         description = "Total purchase cost of active assets",
         example = "{\"totalActiveAssetValue\":12345000.00}"

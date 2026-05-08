@@ -8,6 +8,22 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * Response payload describing software license data.
+ *
+ * @param id the database identifier
+ * @param softwareName the software name value
+ * @param licenseKey the license key value
+ * @param licenseType the license type value
+ * @param vendor the vendor value
+ * @param totalSeats the total seats value
+ * @param usedSeats the used seats value
+ * @param remainingSeats the remaining seats value
+ * @param purchaseDate the purchase date value
+ * @param purchaseCost the purchase cost value
+ * @param expiryDate the expiry date value
+ * @param "true" the "true" value
+ */
 @Schema(
         description = "Software license details returned by the API",
         example = "{\"id\":1,\"softwareName\":\"IntelliJ IDEA\",\"licenseKey\":\"LIC-IDEA-2026-001\",\"licenseType\":\"FLOATING\",\"vendor\":\"JetBrains\",\"totalSeats\":25,\"usedSeats\":7,\"remainingSeats\":18,\"purchaseDate\":\"2026-04-01\",\"purchaseCost\":250000.00,\"expiryDate\":\"2027-04-01\",\"active\":true,\"assignedEmployees\":[{\"id\":1,\"name\":\"Aarav Mehta\",\"email\":\"aarav.mehta@example.com\",\"department\":\"Engineering\",\"designation\":\"Senior Engineer\",\"employeeCode\":\"EMP-00001\",\"active\":true}],\"createdAt\":\"2026-04-21T09:45:00\",\"updatedAt\":\"2026-04-22T10:30:00\"}"

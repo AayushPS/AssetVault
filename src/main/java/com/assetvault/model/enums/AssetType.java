@@ -1,5 +1,8 @@
 package com.assetvault.model.enums;
 
+/**
+ * Enumeration of supported asset type values.
+ */
 public enum AssetType {
     LAPTOP,
     DESKTOP,

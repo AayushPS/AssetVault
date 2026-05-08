@@ -30,6 +30,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * REST controller for employee operations.
+ */
 @Validated
 @RestController
 @RequiredArgsConstructor
@@ -38,6 +41,12 @@ import org.springframework.web.bind.annotation.RestController;
 public class EmployeeController {
     private final EmployeeService employeeService;
 
+    /**
+     * Creates a new employee.
+     *
+     * @param request the request payload
+     * @return the resulting employee
+     */
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Register employee", description = "Creates an employee and auto-generates a code when omitted.")
@@ -45,18 +54,37 @@ public class EmployeeController {
         return employeeService.create(request);
     }
 
+    /**
+     * Returns the requested page of employees.
+     *
+     * @param pageable the pagination and sorting information
+     * @return the requested page of results
+     */
     @GetMapping
     @Operation(summary = "Get all employees", description = "Returns a paginated and sortable list of employees.")
     public Page<EmployeeResponse> getAll(@ParameterObject @PageableDefault(sort = "id") Pageable pageable) {
         return employeeService.getAll(pageable);
     }
 
+    /**
+     * Returns the employee identified by the given id.
+     *
+     * @param id the database identifier
+     * @return the resulting employee
+     */
     @GetMapping("/{id}")
     @Operation(summary = "Get employee by ID", description = "Returns an employee by database id.")
     public EmployeeResponse getById(@PathVariable @Positive Long id) {
         return employeeService.getById(id);
     }
 
+    /**
+     * Searches employees using the supplied keyword.
+     *
+     * @param name the name or label value
+     * @param pageable the pagination and sorting information
+     * @return the requested page of results
+     */
     @GetMapping("/search")
     @Operation(summary = "Search employees by name", description = "Searches employees by partial name.")
     public Page<EmployeeResponse> search(
@@ -66,6 +94,13 @@ public class EmployeeController {
         return employeeService.searchByName(name, pageable);
     }
 
+    /**
+     * Executes the by department operation.
+     *
+     * @param name the name or label value
+     * @param pageable the pagination and sorting information
+     * @return the requested page of results
+     */
     @GetMapping("/department")
     @Operation(summary = "Get employees by department", description = "Returns employees in a department.")
     public Page<EmployeeResponse> byDepartment(
@@ -75,6 +110,13 @@ public class EmployeeController {
         return employeeService.getByDepartment(name, pageable);
     }
 
+    /**
+     * Executes the assigned assets operation.
+     *
+     * @param id the database identifier
+     * @param pageable the pagination and sorting information
+     * @return the requested page of results
+     */
     @GetMapping("/{id}/assets")
     @Operation(summary = "Get employee assets", description = "Returns assets actively assigned to an employee.")
     public Page<AssetResponse> assignedAssets(
@@ -84,6 +126,13 @@ public class EmployeeController {
         return employeeService.getAssignedAssets(id, pageable);
     }
 
+    /**
+     * Executes the assigned licenses operation.
+     *
+     * @param id the database identifier
+     * @param pageable the pagination and sorting information
+     * @return the requested page of results
+     */
     @GetMapping("/{id}/licenses")
     @Operation(summary = "Get employee licenses", description = "Returns software licenses actively assigned to an employee.")
     public Page<SoftwareLicenseResponse> assignedLicenses(
@@ -93,6 +142,13 @@ public class EmployeeController {
         return employeeService.getAssignedLicenses(id, pageable);
     }
 
+    /**
+     * Executes the assignment history operation.
+     *
+     * @param id the database identifier
+     * @param pageable the pagination and sorting information
+     * @return the requested page of results
+     */
     @GetMapping("/{id}/assignment-history")
     @Operation(summary = "Get employee assignment history", description = "Returns full asset assignment history for an employee.")
     public Page<AssetAssignmentResponse> assignmentHistory(
@@ -102,18 +158,36 @@ public class EmployeeController {
         return employeeService.getAssignmentHistory(id, pageable);
     }
 
+    /**
+     * Updates an existing employee.
+     *
+     * @param id the database identifier
+     * @param request the request payload
+     * @return the resulting employee
+     */
     @PutMapping("/{id}")
     @Operation(summary = "Update employee", description = "Updates employee profile details.")
     public EmployeeResponse update(@PathVariable @Positive Long id, @Valid @RequestBody EmployeeRequest request) {
         return employeeService.update(id, request);
     }
 
+    /**
+     * Deactivates the employee.
+     *
+     * @param id the database identifier
+     * @return the resulting employee
+     */
     @PatchMapping("/{id}/deactivate")
     @Operation(summary = "Deactivate employee", description = "Deactivates an employee after checking active assets.")
     public EmployeeResponse deactivate(@PathVariable @Positive Long id) {
         return employeeService.deactivate(id);
     }
 
+    /**
+     * Deletes the employee.
+     *
+     * @param id the database identifier
+     */
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(summary = "Delete employee", description = "Deletes an employee record.")

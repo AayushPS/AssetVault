@@ -6,6 +6,15 @@ import jakarta.validation.constraints.Size;
 
 import java.time.LocalDate;
 
+/**
+ * Request payload for asset assignment operations.
+ *
+ * @param assetId the asset identifier
+ * @param employeeId the employee identifier
+ * @param assignedDate the assigned date value
+ * @param assignedBy the assigned by value
+ * @param remarks the reason captured for the state change
+ */
 @Schema(
         description = "Request payload for assigning an asset",
         example = "{\"assetId\":1,\"employeeId\":1,\"assignedDate\":\"2026-04-21\",\"assignedBy\":\"IT Admin\",\"remarks\":\"Issued during onboarding\"}"

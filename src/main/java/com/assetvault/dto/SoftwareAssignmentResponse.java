@@ -6,6 +6,22 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+/**
+ * Response payload describing software assignment data.
+ *
+ * @param id the database identifier
+ * @param licenseId the license identifier
+ * @param softwareName the software name value
+ * @param employeeId the employee identifier
+ * @param employeeName the employee name value
+ * @param seatIndex the seat index value
+ * @param assignedDate the assigned date value
+ * @param returnedDate the returned date value
+ * @param status the requested status value
+ * @param assignedBy the assigned by value
+ * @param remarks the reason captured for the state change
+ * @param createdAt the created at value
+ */
 @Schema(
         description = "Software license assignment details",
         example = "{\"id\":1,\"licenseId\":1,\"softwareName\":\"IntelliJ IDEA\",\"employeeId\":1,\"employeeName\":\"Aarav Mehta\",\"seatIndex\":3,\"assignedDate\":\"2026-04-21\",\"status\":\"ACTIVE\",\"assignedBy\":\"IT Admin\",\"remarks\":\"Seat assigned for backend work\",\"createdAt\":\"2026-04-21T09:45:00\"}"

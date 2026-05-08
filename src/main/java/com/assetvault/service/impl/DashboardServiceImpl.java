@@ -31,6 +31,9 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
+/**
+ * Service implementation for dashboard operations.
+ */
 @Service
 @RequiredArgsConstructor
 public class DashboardServiceImpl implements DashboardService {
@@ -39,6 +42,11 @@ public class DashboardServiceImpl implements DashboardService {
     private final SoftwareAssignmentRepository softwareAssignmentRepository;
     private final MaintenanceRecordRepository maintenanceRecordRepository;
 
+    /**
+     * Executes the get summary operation.
+     *
+     * @return the resulting dashboard
+     */
     @Override
     @Transactional(readOnly = true)
     public DashboardSummaryResponse getSummary() {
@@ -51,6 +59,12 @@ public class DashboardServiceImpl implements DashboardService {
         );
     }
 
+    /**
+     * Executes the get type breakdown operation.
+     *
+     * @param pageable the pagination and sorting information
+     * @return the requested page of results
+     */
     @Override
     @Transactional(readOnly = true)
     public Page<TypeBreakdownResponse> getTypeBreakdown(Pageable pageable) {
@@ -58,6 +72,12 @@ public class DashboardServiceImpl implements DashboardService {
                 .map(row -> new TypeBreakdownResponse((AssetType) row[0], ((Number) row[1]).longValue()));
     }
 
+    /**
+     * Executes the get department assets operation.
+     *
+     * @param pageable the pagination and sorting information
+     * @return the requested page of results
+     */
     @Override
     @Transactional(readOnly = true)
     public Page<DepartmentAssetSummaryResponse> getDepartmentAssets(Pageable pageable) {
@@ -69,6 +89,12 @@ public class DashboardServiceImpl implements DashboardService {
                 ));
     }
 
+    /**
+     * Executes the get warranty alerts operation.
+     *
+     * @param pageable the pagination and sorting information
+     * @return the requested page of results
+     */
     @Override
     @Transactional(readOnly = true)
     public Page<AssetResponse> getWarrantyAlerts(Pageable pageable) {
@@ -77,6 +103,11 @@ public class DashboardServiceImpl implements DashboardService {
                 .map(Mapper::toAssetResponse);
     }
 
+    /**
+     * Executes the get license alerts operation.
+     *
+     * @return the resulting dashboard
+     */
     @Override
     @Transactional(readOnly = true)
     public LicenseAlertsResponse getLicenseAlerts() {
@@ -94,6 +125,11 @@ public class DashboardServiceImpl implements DashboardService {
         return new LicenseAlertsResponse(expiringSoon, exhausted);
     }
 
+    /**
+     * Executes the get maintenance summary operation.
+     *
+     * @return the resulting dashboard
+     */
     @Override
     @Transactional(readOnly = true)
     public MaintenanceSummaryResponse getMaintenanceSummary() {
@@ -104,12 +140,23 @@ public class DashboardServiceImpl implements DashboardService {
         );
     }
 
+    /**
+     * Executes the get asset value operation.
+     *
+     * @return the resulting dashboard
+     */
     @Override
     @Transactional(readOnly = true)
     public AssetValueResponse getAssetValue() {
         return new AssetValueResponse(assetRepository.getTotalActiveAssetValue().orElse(BigDecimal.ZERO));
     }
 
+    /**
+     * Maps the supplied domain object to its response representation.
+     *
+     * @param license the software license entity to map or update
+     * @return the mapped response payload
+     */
     private SoftwareLicenseResponse toLicenseResponse(SoftwareLicense license) {
         List<EmployeeResponse> assignedEmployees = softwareAssignmentRepository
                 .findAllBySoftwareLicenseIdAndStatusOrderByAssignedDateDescIdDesc(

@@ -11,6 +11,9 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+/**
+ * JPA entity representing maintenance record.
+ */
 @Entity
 @Table(name = "maintenance_record")
 @EntityListeners(AuditingEntityListener.class)

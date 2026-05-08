@@ -27,6 +27,9 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
+/**
+ * Service implementation for asset operations.
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -35,6 +38,12 @@ public class AssetServiceImpl implements AssetService {
     private final AssetAssignmentService assetAssignmentService;
     private final MaintenanceRecordRepository maintenanceRecordRepository;
 
+    /**
+     * Creates a new asset.
+     *
+     * @param request the request payload
+     * @return the resulting asset
+     */
     @Override
     @Transactional
     public AssetResponse create(AssetRequest request) {
@@ -62,18 +71,36 @@ public class AssetServiceImpl implements AssetService {
         return Mapper.toAssetResponse(saved);
     }
 
+    /**
+     * Returns the requested page of assets.
+     *
+     * @param pageable the pagination and sorting information
+     * @return the requested page of results
+     */
     @Override
     @Transactional(readOnly = true)
     public Page<AssetResponse> getAll(Pageable pageable) {
         return assetRepository.findAll(pageable).map(Mapper::toAssetResponse);
     }
 
+    /**
+     * Returns the asset identified by the given id.
+     *
+     * @param id the database identifier
+     * @return the resulting asset
+     */
     @Override
     @Transactional(readOnly = true)
     public AssetResponse getById(Long id) {
         return Mapper.toAssetResponse(findAsset(id));
     }
 
+    /**
+     * Returns the asset identified by the supplied code.
+     *
+     * @param assetCode the generated asset code
+     * @return the resulting asset
+     */
     @Override
     @Transactional(readOnly = true)
     public AssetResponse getByCode(String assetCode) {
@@ -81,30 +108,64 @@ public class AssetServiceImpl implements AssetService {
                 .orElseThrow(() -> new AssetNotFoundException("Asset code %s does not exist".formatted(assetCode))));
     }
 
+    /**
+     * Returns assets filtered by type.
+     *
+     * @param type the requested type value
+     * @param pageable the pagination and sorting information
+     * @return the requested page of results
+     */
     @Override
     @Transactional(readOnly = true)
     public Page<AssetResponse> getByType(AssetType type, Pageable pageable) {
         return assetRepository.findByType(type, pageable).map(Mapper::toAssetResponse);
     }
 
+    /**
+     * Returns assets filtered by status.
+     *
+     * @param status the requested status value
+     * @param pageable the pagination and sorting information
+     * @return the requested page of results
+     */
     @Override
     @Transactional(readOnly = true)
     public Page<AssetResponse> getByStatus(AssetStatus status, Pageable pageable) {
         return assetRepository.findByStatus(status, pageable).map(Mapper::toAssetResponse);
     }
 
+    /**
+     * Returns assets that are currently available.
+     *
+     * @param pageable the pagination and sorting information
+     * @return the requested page of results
+     */
     @Override
     @Transactional(readOnly = true)
     public Page<AssetResponse> getAvailable(Pageable pageable) {
         return getByStatus(AssetStatus.AVAILABLE, pageable);
     }
 
+    /**
+     * Returns assets associated with the supplied department.
+     *
+     * @param name the name or label value
+     * @param pageable the pagination and sorting information
+     * @return the requested page of results
+     */
     @Override
     @Transactional(readOnly = true)
     public Page<AssetResponse> getByDepartment(String name, Pageable pageable) {
         return assetRepository.findAssetsByDepartment(name, pageable).map(Mapper::toAssetResponse);
     }
 
+    /**
+     * Returns assets whose warranty expires inside the requested date window.
+     *
+     * @param days the number of days to look ahead
+     * @param pageable the pagination and sorting information
+     * @return the requested page of results
+     */
     @Override
     @Transactional(readOnly = true)
     public Page<AssetResponse> getWarrantyExpiring(int days, Pageable pageable) {
@@ -118,6 +179,12 @@ public class AssetServiceImpl implements AssetService {
         return expiringAssets;
     }
 
+    /**
+     * Returns assets whose warranty has already expired.
+     *
+     * @param pageable the pagination and sorting information
+     * @return the requested page of results
+     */
     @Override
     @Transactional(readOnly = true)
     public Page<AssetResponse> getWarrantyExpired(Pageable pageable) {
@@ -125,12 +192,26 @@ public class AssetServiceImpl implements AssetService {
                 .map(Mapper::toAssetResponse);
     }
 
+    /**
+     * Searches assets using the supplied keyword.
+     *
+     * @param keyword the search keyword
+     * @param pageable the pagination and sorting information
+     * @return the requested page of results
+     */
     @Override
     @Transactional(readOnly = true)
     public Page<AssetResponse> search(String keyword, Pageable pageable) {
         return assetRepository.searchByKeyword(keyword, pageable).map(Mapper::toAssetResponse);
     }
 
+    /**
+     * Returns assets at or below the supplied maximum cost.
+     *
+     * @param maxCost the maximum accepted purchase cost
+     * @param pageable the pagination and sorting information
+     * @return the requested page of results
+     */
     @Override
     @Transactional(readOnly = true)
     public Page<AssetResponse> getLowValue(BigDecimal maxCost, Pageable pageable) {
@@ -138,6 +219,13 @@ public class AssetServiceImpl implements AssetService {
                 .map(Mapper::toAssetResponse);
     }
 
+    /**
+     * Updates an existing asset.
+     *
+     * @param id the database identifier
+     * @param request the request payload
+     * @return the resulting asset
+     */
     @Override
     @Transactional
     public AssetResponse update(Long id, AssetRequest request) {
@@ -167,6 +255,13 @@ public class AssetServiceImpl implements AssetService {
         return Mapper.toAssetResponse(assetRepository.save(asset));
     }
 
+    /**
+     * Updates the status of the asset.
+     *
+     * @param id the database identifier
+     * @param status the requested status value
+     * @return the resulting asset
+     */
     @Override
     @Transactional
     public AssetResponse updateStatus(Long id, AssetStatus status) {
@@ -187,6 +282,12 @@ public class AssetServiceImpl implements AssetService {
         return Mapper.toAssetResponse(saved);
     }
 
+    /**
+     * Marks the asset as retired.
+     *
+     * @param id the database identifier
+     * @return the resulting asset
+     */
     @Override
     @Transactional
     public AssetResponse retire(Long id) {
@@ -198,6 +299,12 @@ public class AssetServiceImpl implements AssetService {
         return Mapper.toAssetResponse(saved);
     }
 
+    /**
+     * Marks the asset as lost.
+     *
+     * @param id the database identifier
+     * @return the resulting asset
+     */
     @Override
     @Transactional
     public AssetResponse markLost(Long id) {
@@ -210,6 +317,11 @@ public class AssetServiceImpl implements AssetService {
         return Mapper.toAssetResponse(saved);
     }
 
+    /**
+     * Deletes the asset.
+     *
+     * @param id the database identifier
+     */
     @Override
     @Transactional
     public void delete(Long id) {
@@ -219,21 +331,45 @@ public class AssetServiceImpl implements AssetService {
         log.info("Asset deleted: {} (releasedAssignments={})", asset.getAssetCode(), releasedAssignments);
     }
 
+    /**
+     * Finds the asset entity for the supplied identifier.
+     *
+     * @param id the database identifier
+     * @return the resulting asset
+     */
     private Asset findAsset(Long id) {
         return assetRepository.findById(id)
                 .orElseThrow(() -> new AssetNotFoundException("Asset ID %d does not exist".formatted(id)));
     }
 
+    /**
+     * Ensures that the supplied asset is not retired.
+     *
+     * @param asset the asset entity to map or validate
+     */
     private void ensureNotRetired(Asset asset) {
         if (asset.getStatus() == AssetStatus.RETIRED) {
             throw new AssetRetiredException("Operation is not allowed on retired asset %s".formatted(asset.getAssetCode()));
         }
     }
 
+    /**
+     * Releases active asset assignments for the supplied asset.
+     *
+     * @param assetId the asset identifier
+     * @param remarks the reason captured for the state change
+     * @return the computed numeric result
+     */
     private int releaseActiveAssignment(Long assetId, String remarks) {
         return assetAssignmentService.releaseActiveAssignmentsForAsset(assetId, remarks);
     }
 
+    /**
+     * Cancels in-progress maintenance records for the supplied asset.
+     *
+     * @param asset the asset entity to map or validate
+     * @return the computed numeric result
+     */
     private int cancelInProgressMaintenance(Asset asset) {
         List<MaintenanceRecord> records = maintenanceRecordRepository
                 .findAllByAssetIdAndStatusOrderByScheduledDateDescIdDesc(

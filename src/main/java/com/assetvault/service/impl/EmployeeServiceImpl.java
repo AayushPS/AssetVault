@@ -27,6 +27,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+/**
+ * Service implementation for employee operations.
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -35,6 +38,12 @@ public class EmployeeServiceImpl implements EmployeeService {
     private final AssetAssignmentRepository assetAssignmentRepository;
     private final SoftwareAssignmentRepository softwareAssignmentRepository;
 
+    /**
+     * Creates a new employee.
+     *
+     * @param request the request payload
+     * @return the resulting employee
+     */
     @Override
     @Transactional
     public EmployeeResponse create(EmployeeRequest request) {
@@ -63,30 +72,63 @@ public class EmployeeServiceImpl implements EmployeeService {
         return Mapper.toEmployeeResponse(saved);
     }
 
+    /**
+     * Returns the requested page of employees.
+     *
+     * @param pageable the pagination and sorting information
+     * @return the requested page of results
+     */
     @Override
     @Transactional(readOnly = true)
     public Page<EmployeeResponse> getAll(Pageable pageable) {
         return employeeRepository.findAll(pageable).map(Mapper::toEmployeeResponse);
     }
 
+    /**
+     * Returns the employee identified by the given id.
+     *
+     * @param id the database identifier
+     * @return the resulting employee
+     */
     @Override
     @Transactional(readOnly = true)
     public EmployeeResponse getById(Long id) {
         return Mapper.toEmployeeResponse(findEmployee(id));
     }
 
+    /**
+     * Executes the search by name operation.
+     *
+     * @param name the name or label value
+     * @param pageable the pagination and sorting information
+     * @return the requested page of results
+     */
     @Override
     @Transactional(readOnly = true)
     public Page<EmployeeResponse> searchByName(String name, Pageable pageable) {
         return employeeRepository.searchByName(name, pageable).map(Mapper::toEmployeeResponse);
     }
 
+    /**
+     * Returns employees associated with the supplied department.
+     *
+     * @param name the name or label value
+     * @param pageable the pagination and sorting information
+     * @return the requested page of results
+     */
     @Override
     @Transactional(readOnly = true)
     public Page<EmployeeResponse> getByDepartment(String name, Pageable pageable) {
         return employeeRepository.findByDepartment(name, pageable).map(Mapper::toEmployeeResponse);
     }
 
+    /**
+     * Executes the get assigned assets operation.
+     *
+     * @param id the database identifier
+     * @param pageable the pagination and sorting information
+     * @return the requested page of results
+     */
     @Override
     @Transactional(readOnly = true)
     public Page<AssetResponse> getAssignedAssets(Long id, Pageable pageable) {
@@ -94,6 +136,13 @@ public class EmployeeServiceImpl implements EmployeeService {
         return employeeRepository.findActiveAssetsForEmployee(id, pageable).map(Mapper::toAssetResponse);
     }
 
+    /**
+     * Executes the get assigned licenses operation.
+     *
+     * @param id the database identifier
+     * @param pageable the pagination and sorting information
+     * @return the requested page of results
+     */
     @Override
     @Transactional(readOnly = true)
     public Page<SoftwareLicenseResponse> getAssignedLicenses(Long id, Pageable pageable) {
@@ -102,6 +151,13 @@ public class EmployeeServiceImpl implements EmployeeService {
                 .map(this::toLicenseResponse);
     }
 
+    /**
+     * Executes the get assignment history operation.
+     *
+     * @param id the database identifier
+     * @param pageable the pagination and sorting information
+     * @return the requested page of results
+     */
     @Override
     @Transactional(readOnly = true)
     public Page<AssetAssignmentResponse> getAssignmentHistory(Long id, Pageable pageable) {
@@ -110,6 +166,13 @@ public class EmployeeServiceImpl implements EmployeeService {
                 .map(Mapper::toAssetAssignmentResponse);
     }
 
+    /**
+     * Updates an existing employee.
+     *
+     * @param id the database identifier
+     * @param request the request payload
+     * @return the resulting employee
+     */
     @Override
     @Transactional
     public EmployeeResponse update(Long id, EmployeeRequest request) {
@@ -131,6 +194,12 @@ public class EmployeeServiceImpl implements EmployeeService {
         return Mapper.toEmployeeResponse(employeeRepository.save(employee));
     }
 
+    /**
+     * Deactivates the employee.
+     *
+     * @param id the database identifier
+     * @return the resulting employee
+     */
     @Override
     @Transactional
     public EmployeeResponse deactivate(Long id) {
@@ -142,17 +211,34 @@ public class EmployeeServiceImpl implements EmployeeService {
         return Mapper.toEmployeeResponse(employeeRepository.save(employee));
     }
 
+    /**
+     * Deletes the employee.
+     *
+     * @param id the database identifier
+     */
     @Override
     @Transactional
     public void delete(Long id) {
         employeeRepository.delete(findEmployee(id));
     }
 
+    /**
+     * Executes the find employee operation.
+     *
+     * @param id the database identifier
+     * @return the resulting employee
+     */
     private Employee findEmployee(Long id) {
         return employeeRepository.findById(id)
                 .orElseThrow(() -> new EmployeeNotFoundException("Employee ID %d does not exist".formatted(id)));
     }
 
+    /**
+     * Maps the supplied domain object to its response representation.
+     *
+     * @param license the software license entity to map or update
+     * @return the mapped response payload
+     */
     private SoftwareLicenseResponse toLicenseResponse(SoftwareLicense license) {
         List<EmployeeResponse> assignedEmployees = softwareAssignmentRepository
                 .findAllBySoftwareLicenseIdAndStatusOrderByAssignedDateDescIdDesc(
@@ -166,6 +252,12 @@ public class EmployeeServiceImpl implements EmployeeService {
         return Mapper.toSoftwareLicenseResponse(license, assignedEmployees);
     }
 
+    /**
+     * Executes the has text operation.
+     *
+     * @param value the value to inspect
+     * @return true when the requested condition is satisfied; otherwise false
+     */
     private boolean hasText(String value) {
         return value != null && !value.isBlank();
     }

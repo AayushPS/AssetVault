@@ -12,6 +12,21 @@ import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+/**
+ * Request payload for asset operations.
+ *
+ * @param name the name or label value
+ * @param brand the brand value
+ * @param model the model value
+ * @param type the requested type value
+ * @param status the requested status value
+ * @param purchaseDate the purchase date value
+ * @param purchaseCost the purchase cost value
+ * @param warrantyExpiryDate the warranty expiry date value
+ * @param serialNumber the serial number value
+ * @param location the location value
+ * @param notes the notes value
+ */
 @Schema(
         description = "Request payload for creating or updating an asset",
         example = "{\"name\":\"MacBook Pro 14\",\"brand\":\"Apple\",\"model\":\"M3 Pro\",\"type\":\"LAPTOP\",\"status\":\"AVAILABLE\",\"purchaseDate\":\"2026-04-01\",\"purchaseCost\":149999.00,\"warrantyExpiryDate\":\"2029-04-01\",\"serialNumber\":\"C02ZK1ABCD\",\"location\":\"Bengaluru HQ\",\"notes\":\"Procured for engineering refresh\"}"

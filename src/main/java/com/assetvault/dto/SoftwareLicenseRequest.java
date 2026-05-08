@@ -12,6 +12,20 @@ import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+/**
+ * Request payload for software license operations.
+ *
+ * @param softwareName the software name value
+ * @param licenseKey the license key value
+ * @param licenseType the license type value
+ * @param vendor the vendor value
+ * @param totalSeats the total seats value
+ * @param usedSeats the used seats value
+ * @param purchaseDate the purchase date value
+ * @param purchaseCost the purchase cost value
+ * @param expiryDate the expiry date value
+ * @param active the active value
+ */
 @Schema(
         description = "Request payload for creating or updating a software license",
         example = "{\"softwareName\":\"IntelliJ IDEA\",\"licenseKey\":\"LIC-IDEA-2026-001\",\"licenseType\":\"FLOATING\",\"vendor\":\"JetBrains\",\"totalSeats\":25,\"usedSeats\":0,\"purchaseDate\":\"2026-04-01\",\"purchaseCost\":250000.00,\"expiryDate\":\"2027-04-01\",\"active\":true}"

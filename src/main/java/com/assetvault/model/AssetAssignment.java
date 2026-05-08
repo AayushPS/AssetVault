@@ -6,6 +6,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
+/**
+ * JPA entity representing asset assignment.
+ */
 @Entity
 @Table(name = "asset_assignment")
 @Getter

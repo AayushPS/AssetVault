@@ -26,6 +26,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.List;
 
+/**
+ * Service implementation for software assignment operations.
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -34,6 +37,13 @@ public class SoftwareAssignmentServiceImpl implements SoftwareAssignmentService 
     private final SoftwareAssignmentRepository softwareAssignmentRepository;
     private final EmployeeRepository employeeRepository;
 
+    /**
+     * Assigns the requested software assignment.
+     *
+     * @param licenseId the license identifier
+     * @param employeeId the employee identifier
+     * @return the resulting software assignment
+     */
     @Override
     @Transactional
     public SoftwareLicenseResponse assign(Long licenseId, Long employeeId) {
@@ -75,6 +85,13 @@ public class SoftwareAssignmentServiceImpl implements SoftwareAssignmentService 
         return toLicenseResponse(saved);
     }
 
+    /**
+     * Revokes the requested software assignment assignment.
+     *
+     * @param licenseId the license identifier
+     * @param employeeId the employee identifier
+     * @return the resulting software assignment
+     */
     @Override
     @Transactional
     public SoftwareLicenseResponse revoke(Long licenseId, Long employeeId) {
@@ -92,6 +109,13 @@ public class SoftwareAssignmentServiceImpl implements SoftwareAssignmentService 
         return toLicenseResponse(saved);
     }
 
+    /**
+     * Executes the revoke active assignments for license operation.
+     *
+     * @param licenseId the license identifier
+     * @param remarks the reason captured for the state change
+     * @return the computed numeric result
+     */
     @Override
     @Transactional
     public int revokeActiveAssignmentsForLicense(Long licenseId, String remarks) {
@@ -105,6 +129,12 @@ public class SoftwareAssignmentServiceImpl implements SoftwareAssignmentService 
         return activeAssignments.size();
     }
 
+    /**
+     * Executes the delete assignments for license operation.
+     *
+     * @param licenseId the license identifier
+     * @return the computed numeric result
+     */
     @Override
     @Transactional
     public long deleteAssignmentsForLicense(Long licenseId) {
@@ -115,22 +145,46 @@ public class SoftwareAssignmentServiceImpl implements SoftwareAssignmentService 
         return deletedAssignments;
     }
 
+    /**
+     * Executes the find license for update operation.
+     *
+     * @param id the database identifier
+     * @return the resulting software assignment
+     */
     private SoftwareLicense findLicenseForUpdate(Long id) {
         return softwareLicenseRepository.findByIdForUpdate(id)
                 .orElseThrow(() -> new LicenseNotFoundException("License ID %d does not exist".formatted(id)));
     }
 
+    /**
+     * Executes the find employee operation.
+     *
+     * @param id the database identifier
+     * @return the resulting software assignment
+     */
     private Employee findEmployee(Long id) {
         return employeeRepository.findById(id)
                 .orElseThrow(() -> new EmployeeNotFoundException("Employee ID %d does not exist".formatted(id)));
     }
 
+    /**
+     * Executes the release assignment operation.
+     *
+     * @param assignment the assignment entity to map or update
+     * @param remarks the reason captured for the state change
+     */
     private void releaseAssignment(SoftwareAssignment assignment, String remarks) {
         assignment.setStatus(AssignmentStatus.RETURNED);
         assignment.setReturnedDate(LocalDate.now());
         assignment.setRemarks(appendRemark(assignment.getRemarks(), remarks));
     }
 
+    /**
+     * Maps the supplied domain object to its response representation.
+     *
+     * @param license the software license entity to map or update
+     * @return the mapped response payload
+     */
     private SoftwareLicenseResponse toLicenseResponse(SoftwareLicense license) {
         List<EmployeeResponse> assignedEmployees = softwareAssignmentRepository
                 .findAllBySoftwareLicenseIdAndStatusOrderByAssignedDateDescIdDesc(
@@ -144,6 +198,12 @@ public class SoftwareAssignmentServiceImpl implements SoftwareAssignmentService 
         return Mapper.toSoftwareLicenseResponse(license, assignedEmployees);
     }
 
+    /**
+     * Executes the active seat count operation.
+     *
+     * @param licenseId the license identifier
+     * @return the computed numeric result
+     */
     private int activeSeatCount(Long licenseId) {
         return Math.toIntExact(softwareAssignmentRepository.countBySoftwareLicenseIdAndStatus(
                 licenseId,
@@ -151,6 +211,13 @@ public class SoftwareAssignmentServiceImpl implements SoftwareAssignmentService 
         ));
     }
 
+    /**
+     * Executes the append remark operation.
+     *
+     * @param current the current value
+     * @param addition the addition value
+     * @return the resulting software assignment
+     */
     private String appendRemark(String current, String addition) {
         if (addition == null || addition.isBlank()) {
             return current;

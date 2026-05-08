@@ -27,6 +27,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.List;
 
+/**
+ * Service implementation for maintenance operations.
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -40,6 +43,12 @@ public class MaintenanceServiceImpl implements MaintenanceService {
     private final AssetRepository assetRepository;
     private final AssetAssignmentRepository assetAssignmentRepository;
 
+    /**
+     * Creates a new maintenance.
+     *
+     * @param request the request payload
+     * @return the resulting maintenance
+     */
     @Override
     @Transactional
     public MaintenanceRecordResponse create(MaintenanceRecordRequest request) {
@@ -61,18 +70,37 @@ public class MaintenanceServiceImpl implements MaintenanceService {
         return Mapper.toMaintenanceResponse(saved);
     }
 
+    /**
+     * Returns the requested page of maintenance records.
+     *
+     * @param pageable the pagination and sorting information
+     * @return the requested page of results
+     */
     @Override
     @Transactional(readOnly = true)
     public Page<MaintenanceRecordResponse> getAll(Pageable pageable) {
         return maintenanceRecordRepository.findAll(pageable).map(Mapper::toMaintenanceResponse);
     }
 
+    /**
+     * Returns the maintenance identified by the given id.
+     *
+     * @param id the database identifier
+     * @return the resulting maintenance
+     */
     @Override
     @Transactional(readOnly = true)
     public MaintenanceRecordResponse getById(Integer id) {
         return Mapper.toMaintenanceResponse(findRecord(id));
     }
 
+    /**
+     * Executes the get by asset operation.
+     *
+     * @param assetId the asset identifier
+     * @param pageable the pagination and sorting information
+     * @return the requested page of results
+     */
     @Override
     @Transactional(readOnly = true)
     public Page<MaintenanceRecordResponse> getByAsset(Long assetId, Pageable pageable) {
@@ -81,12 +109,26 @@ public class MaintenanceServiceImpl implements MaintenanceService {
                 .map(Mapper::toMaintenanceResponse);
     }
 
+    /**
+     * Returns maintenance records filtered by status.
+     *
+     * @param status the requested status value
+     * @param pageable the pagination and sorting information
+     * @return the requested page of results
+     */
     @Override
     @Transactional(readOnly = true)
     public Page<MaintenanceRecordResponse> getByStatus(MaintenanceStatus status, Pageable pageable) {
         return maintenanceRecordRepository.findByStatus(status, pageable).map(Mapper::toMaintenanceResponse);
     }
 
+    /**
+     * Returns maintenance records filtered by type.
+     *
+     * @param type the requested type value
+     * @param pageable the pagination and sorting information
+     * @return the requested page of results
+     */
     @Override
     @Transactional(readOnly = true)
     public Page<MaintenanceRecordResponse> getByType(MaintenanceType type, Pageable pageable) {
@@ -94,6 +136,12 @@ public class MaintenanceServiceImpl implements MaintenanceService {
                 .map(Mapper::toMaintenanceResponse);
     }
 
+    /**
+     * Executes the get scheduled operation.
+     *
+     * @param pageable the pagination and sorting information
+     * @return the requested page of results
+     */
     @Override
     @Transactional(readOnly = true)
     public Page<MaintenanceRecordResponse> getScheduled(Pageable pageable) {
@@ -101,6 +149,14 @@ public class MaintenanceServiceImpl implements MaintenanceService {
                 .map(Mapper::toMaintenanceResponse);
     }
 
+    /**
+     * Executes the get by date range operation.
+     *
+     * @param from the window start date
+     * @param to the window end date
+     * @param pageable the pagination and sorting information
+     * @return the requested page of results
+     */
     @Override
     @Transactional(readOnly = true)
     public Page<MaintenanceRecordResponse> getByDateRange(LocalDate from, LocalDate to, Pageable pageable) {
@@ -109,6 +165,13 @@ public class MaintenanceServiceImpl implements MaintenanceService {
                 .map(Mapper::toMaintenanceResponse);
     }
 
+    /**
+     * Updates an existing maintenance.
+     *
+     * @param id the database identifier
+     * @param request the request payload
+     * @return the resulting maintenance
+     */
     @Override
     @Transactional
     public MaintenanceRecordResponse update(Integer id, MaintenanceRecordRequest request) {
@@ -132,6 +195,12 @@ public class MaintenanceServiceImpl implements MaintenanceService {
         return Mapper.toMaintenanceResponse(maintenanceRecordRepository.save(record));
     }
 
+    /**
+     * Moves the maintenance into progress.
+     *
+     * @param id the database identifier
+     * @return the resulting maintenance
+     */
     @Override
     @Transactional
     public MaintenanceRecordResponse start(Integer id) {
@@ -145,6 +214,12 @@ public class MaintenanceServiceImpl implements MaintenanceService {
         return Mapper.toMaintenanceResponse(saved);
     }
 
+    /**
+     * Marks the maintenance as completed.
+     *
+     * @param id the database identifier
+     * @return the resulting maintenance
+     */
     @Override
     @Transactional
     public MaintenanceRecordResponse complete(Integer id) {
@@ -159,6 +234,12 @@ public class MaintenanceServiceImpl implements MaintenanceService {
         return Mapper.toMaintenanceResponse(saved);
     }
 
+    /**
+     * Cancels the maintenance.
+     *
+     * @param id the database identifier
+     * @return the resulting maintenance
+     */
     @Override
     @Transactional
     public MaintenanceRecordResponse cancel(Integer id) {
@@ -172,6 +253,11 @@ public class MaintenanceServiceImpl implements MaintenanceService {
         return Mapper.toMaintenanceResponse(saved);
     }
 
+    /**
+     * Deletes the maintenance.
+     *
+     * @param id the database identifier
+     */
     @Override
     @Transactional
     public void delete(Integer id) {
@@ -184,6 +270,12 @@ public class MaintenanceServiceImpl implements MaintenanceService {
         }
     }
 
+    /**
+     * Executes the find record operation.
+     *
+     * @param id the database identifier
+     * @return the resulting maintenance
+     */
     private MaintenanceRecord findRecord(Integer id) {
         return maintenanceRecordRepository.findById(id)
                 .orElseThrow(() -> new MaintenanceRecordNotFoundException(
@@ -191,17 +283,35 @@ public class MaintenanceServiceImpl implements MaintenanceService {
                 ));
     }
 
+    /**
+     * Finds the asset entity for the supplied identifier.
+     *
+     * @param id the database identifier
+     * @return the resulting maintenance
+     */
     private Asset findAsset(Long id) {
         return assetRepository.findById(id)
                 .orElseThrow(() -> new AssetNotFoundException("Asset ID %d does not exist".formatted(id)));
     }
 
+    /**
+     * Ensures that the supplied asset is not retired.
+     *
+     * @param asset the asset entity to map or validate
+     */
     private void ensureNotRetired(Asset asset) {
         if (asset.getStatus() == AssetStatus.RETIRED) {
             throw new AssetRetiredException("Operation is not allowed on retired asset %s".formatted(asset.getAssetCode()));
         }
     }
 
+    /**
+     * Executes the ensure record status operation.
+     *
+     * @param record the maintenance record to map or update
+     * @param requiredStatus the required status value
+     * @param action the action value
+     */
     private void ensureRecordStatus(MaintenanceRecord record, MaintenanceStatus requiredStatus, String action) {
         if (record.getStatus() != requiredStatus) {
             throw new MaintenanceStateException(
@@ -211,6 +321,12 @@ public class MaintenanceServiceImpl implements MaintenanceService {
         }
     }
 
+    /**
+     * Executes the ensure asset under maintenance operation.
+     *
+     * @param asset the asset entity to map or validate
+     * @param action the action value
+     */
     private void ensureAssetUnderMaintenance(Asset asset, String action) {
         if (asset.getStatus() != AssetStatus.UNDER_MAINTENANCE) {
             throw new MaintenanceStateException(
@@ -220,6 +336,13 @@ public class MaintenanceServiceImpl implements MaintenanceService {
         }
     }
 
+    /**
+     * Executes the sync asset for maintenance operation.
+     *
+     * @param asset the asset entity to map or validate
+     * @param status the requested status value
+     * @param currentRecordId the current record id value
+     */
     private void syncAssetForMaintenance(Asset asset, MaintenanceStatus status, Integer currentRecordId) {
         if (isActiveMaintenanceStatus(status)) {
             asset.setStatus(AssetStatus.UNDER_MAINTENANCE);
@@ -229,6 +352,12 @@ public class MaintenanceServiceImpl implements MaintenanceService {
         }
     }
 
+    /**
+     * Executes the restore asset status operation.
+     *
+     * @param asset the asset entity to map or validate
+     * @param currentRecordId the current record id value
+     */
     private void restoreAssetStatus(Asset asset, Integer currentRecordId) {
         if (asset.getStatus() == AssetStatus.RETIRED || asset.getStatus() == AssetStatus.LOST) {
             return;
@@ -246,6 +375,13 @@ public class MaintenanceServiceImpl implements MaintenanceService {
         assetRepository.save(asset);
     }
 
+    /**
+     * Executes the has other active maintenance operation.
+     *
+     * @param assetId the asset identifier
+     * @param currentRecordId the current record id value
+     * @return true when the requested condition is satisfied; otherwise false
+     */
     private boolean hasOtherActiveMaintenance(Long assetId, Integer currentRecordId) {
         if (currentRecordId == null) {
             return maintenanceRecordRepository.existsByAssetIdAndStatusIn(
@@ -260,10 +396,22 @@ public class MaintenanceServiceImpl implements MaintenanceService {
         );
     }
 
+    /**
+     * Executes the is active maintenance status operation.
+     *
+     * @param status the requested status value
+     * @return true when the requested condition is satisfied; otherwise false
+     */
     private boolean isActiveMaintenanceStatus(MaintenanceStatus status) {
         return ACTIVE_MAINTENANCE_STATUSES.contains(status);
     }
 
+    /**
+     * Executes the validate date range operation.
+     *
+     * @param from the window start date
+     * @param to the window end date
+     */
     private void validateDateRange(LocalDate from, LocalDate to) {
         if (from == null || to == null) {
             throw new IllegalArgumentException("from and to dates are required");

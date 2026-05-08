@@ -4,6 +4,18 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.LocalDateTime;
 
+/**
+ * Response payload describing employee data.
+ *
+ * @param id the database identifier
+ * @param name the name or label value
+ * @param email the email value
+ * @param department the department name
+ * @param designation the designation value
+ * @param employeeCode the employee code value
+ * @param active the active value
+ * @param createdAt the created at value
+ */
 @Schema(
         description = "Employee details returned by the API",
         example = "{\"id\":1,\"name\":\"Aarav Mehta\",\"email\":\"aarav.mehta@example.com\",\"department\":\"Engineering\",\"designation\":\"Senior Engineer\",\"employeeCode\":\"EMP-00001\",\"active\":true,\"createdAt\":\"2026-04-21T09:45:00\"}"

@@ -29,6 +29,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * REST controller for license operations.
+ */
 @Validated
 @RestController
 @RequiredArgsConstructor
@@ -38,6 +41,12 @@ public class LicenseController {
     private final SoftwareLicenseService softwareLicenseService;
     private final SoftwareAssignmentService softwareAssignmentService;
 
+    /**
+     * Creates a new license.
+     *
+     * @param request the request payload
+     * @return the resulting license
+     */
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Add software license", description = "Creates a new software license record.")
@@ -45,18 +54,37 @@ public class LicenseController {
         return softwareLicenseService.create(request);
     }
 
+    /**
+     * Returns the requested page of licenses.
+     *
+     * @param pageable the pagination and sorting information
+     * @return the requested page of results
+     */
     @GetMapping
     @Operation(summary = "Get all licenses", description = "Returns paginated software licenses.")
     public Page<SoftwareLicenseResponse> getAll(@ParameterObject @PageableDefault(sort = "id") Pageable pageable) {
         return softwareLicenseService.getAll(pageable);
     }
 
+    /**
+     * Returns the license identified by the given id.
+     *
+     * @param id the database identifier
+     * @return the resulting license
+     */
     @GetMapping("/{id}")
     @Operation(summary = "Get license by ID", description = "Returns a software license by id.")
     public SoftwareLicenseResponse getById(@PathVariable @Positive Long id) {
         return softwareLicenseService.getById(id);
     }
 
+    /**
+     * Executes the expiring soon operation.
+     *
+     * @param days the number of days to look ahead
+     * @param pageable the pagination and sorting information
+     * @return the requested page of results
+     */
     @GetMapping("/expiring-soon")
     @Operation(summary = "Get licenses expiring soon", description = "Returns licenses expiring within N days.")
     public Page<SoftwareLicenseResponse> expiringSoon(
@@ -66,6 +94,12 @@ public class LicenseController {
         return softwareLicenseService.getExpiringSoon(days, pageable);
     }
 
+    /**
+     * Executes the expired operation.
+     *
+     * @param pageable the pagination and sorting information
+     * @return the requested page of results
+     */
     @GetMapping("/expired")
     @Operation(summary = "Get expired licenses", description = "Returns licenses whose expiry date is in the past.")
     public Page<SoftwareLicenseResponse> expired(
@@ -74,12 +108,25 @@ public class LicenseController {
         return softwareLicenseService.getExpired(pageable);
     }
 
+    /**
+     * Executes the low seats operation.
+     *
+     * @param pageable the pagination and sorting information
+     * @return the requested page of results
+     */
     @GetMapping("/low-seats")
     @Operation(summary = "Get licenses with no remaining seats", description = "Returns licenses where used seats meet or exceed total seats.")
     public Page<SoftwareLicenseResponse> lowSeats(@ParameterObject @PageableDefault(sort = "id") Pageable pageable) {
         return softwareLicenseService.getLowSeats(pageable);
     }
 
+    /**
+     * Searches licenses using the supplied keyword.
+     *
+     * @param name the name or label value
+     * @param pageable the pagination and sorting information
+     * @return the requested page of results
+     */
     @GetMapping("/search")
     @Operation(summary = "Search licenses", description = "Searches licenses by software name.")
     public Page<SoftwareLicenseResponse> search(
@@ -89,12 +136,26 @@ public class LicenseController {
         return softwareLicenseService.search(name, pageable);
     }
 
+    /**
+     * Updates an existing license.
+     *
+     * @param id the database identifier
+     * @param request the request payload
+     * @return the resulting license
+     */
     @PutMapping("/{id}")
     @Operation(summary = "Update license", description = "Updates full software license details.")
     public SoftwareLicenseResponse update(@PathVariable @Positive Long id, @Valid @RequestBody SoftwareLicenseRequest request) {
         return softwareLicenseService.update(id, request);
     }
 
+    /**
+     * Assigns the requested license.
+     *
+     * @param id the database identifier
+     * @param employeeId the employee identifier
+     * @return the resulting license
+     */
     @PatchMapping("/{id}/assign")
     @Operation(summary = "Assign license seat", description = "Assigns a license seat to an active employee.")
     public SoftwareLicenseResponse assign(
@@ -104,6 +165,13 @@ public class LicenseController {
         return softwareAssignmentService.assign(id, employeeId);
     }
 
+    /**
+     * Revokes the requested license assignment.
+     *
+     * @param id the database identifier
+     * @param employeeId the employee identifier
+     * @return the resulting license
+     */
     @PatchMapping("/{id}/revoke")
     @Operation(summary = "Revoke license seat", description = "Revokes a license seat from an employee.")
     public SoftwareLicenseResponse revoke(
@@ -113,12 +181,23 @@ public class LicenseController {
         return softwareAssignmentService.revoke(id, employeeId);
     }
 
+    /**
+     * Deactivates the license.
+     *
+     * @param id the database identifier
+     * @return the resulting license
+     */
     @PatchMapping("/{id}/deactivate")
     @Operation(summary = "Deactivate license", description = "Marks a software license as inactive.")
     public SoftwareLicenseResponse deactivate(@PathVariable @Positive Long id) {
         return softwareLicenseService.deactivate(id);
     }
 
+    /**
+     * Deletes the license.
+     *
+     * @param id the database identifier
+     */
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(summary = "Delete license", description = "Deletes a software license record.")

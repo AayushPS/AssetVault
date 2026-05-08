@@ -23,6 +23,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.List;
 
+/**
+ * Service implementation for software license operations.
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -31,6 +34,12 @@ public class SoftwareLicenseServiceImpl implements SoftwareLicenseService {
     private final SoftwareAssignmentRepository softwareAssignmentRepository;
     private final SoftwareAssignmentService softwareAssignmentService;
 
+    /**
+     * Creates a new software license.
+     *
+     * @param request the request payload
+     * @return the resulting software license
+     */
     @Override
     @Transactional
     public SoftwareLicenseResponse create(SoftwareLicenseRequest request) {
@@ -58,18 +67,37 @@ public class SoftwareLicenseServiceImpl implements SoftwareLicenseService {
         return toLicenseResponse(saved);
     }
 
+    /**
+     * Returns the requested page of software licenses.
+     *
+     * @param pageable the pagination and sorting information
+     * @return the requested page of results
+     */
     @Override
     @Transactional(readOnly = true)
     public Page<SoftwareLicenseResponse> getAll(Pageable pageable) {
         return softwareLicenseRepository.findAll(pageable).map(this::toLicenseResponse);
     }
 
+    /**
+     * Returns the software license identified by the given id.
+     *
+     * @param id the database identifier
+     * @return the resulting software license
+     */
     @Override
     @Transactional(readOnly = true)
     public SoftwareLicenseResponse getById(Long id) {
         return toLicenseResponse(findLicense(id));
     }
 
+    /**
+     * Executes the get expiring soon operation.
+     *
+     * @param days the number of days to look ahead
+     * @param pageable the pagination and sorting information
+     * @return the requested page of results
+     */
     @Override
     @Transactional(readOnly = true)
     public Page<SoftwareLicenseResponse> getExpiringSoon(int days, Pageable pageable) {
@@ -83,12 +111,24 @@ public class SoftwareLicenseServiceImpl implements SoftwareLicenseService {
         return expiringLicenses;
     }
 
+    /**
+     * Executes the get expired operation.
+     *
+     * @param pageable the pagination and sorting information
+     * @return the requested page of results
+     */
     @Override
     @Transactional(readOnly = true)
     public Page<SoftwareLicenseResponse> getExpired(Pageable pageable) {
         return softwareLicenseRepository.findExpiredLicenses(LocalDate.now(), pageable).map(this::toLicenseResponse);
     }
 
+    /**
+     * Executes the get low seats operation.
+     *
+     * @param pageable the pagination and sorting information
+     * @return the requested page of results
+     */
     @Override
     @Transactional(readOnly = true)
     public Page<SoftwareLicenseResponse> getLowSeats(Pageable pageable) {
@@ -101,12 +141,26 @@ public class SoftwareLicenseServiceImpl implements SoftwareLicenseService {
         return lowSeatLicenses;
     }
 
+    /**
+     * Searches software licenses using the supplied keyword.
+     *
+     * @param name the name or label value
+     * @param pageable the pagination and sorting information
+     * @return the requested page of results
+     */
     @Override
     @Transactional(readOnly = true)
     public Page<SoftwareLicenseResponse> search(String name, Pageable pageable) {
         return softwareLicenseRepository.searchBySoftwareName(name, pageable).map(this::toLicenseResponse);
     }
 
+    /**
+     * Updates an existing software license.
+     *
+     * @param id the database identifier
+     * @param request the request payload
+     * @return the resulting software license
+     */
     @Override
     @Transactional
     public SoftwareLicenseResponse update(Long id, SoftwareLicenseRequest request) {
@@ -133,6 +187,12 @@ public class SoftwareLicenseServiceImpl implements SoftwareLicenseService {
         return toLicenseResponse(saved);
     }
 
+    /**
+     * Deactivates the software license.
+     *
+     * @param id the database identifier
+     * @return the resulting software license
+     */
     @Override
     @Transactional
     public SoftwareLicenseResponse deactivate(Long id) {
@@ -148,6 +208,11 @@ public class SoftwareLicenseServiceImpl implements SoftwareLicenseService {
         return toLicenseResponse(saved);
     }
 
+    /**
+     * Deletes the software license.
+     *
+     * @param id the database identifier
+     */
     @Override
     @Transactional
     public void delete(Long id) {
@@ -166,16 +231,34 @@ public class SoftwareLicenseServiceImpl implements SoftwareLicenseService {
         );
     }
 
+    /**
+     * Executes the find license operation.
+     *
+     * @param id the database identifier
+     * @return the resulting software license
+     */
     private SoftwareLicense findLicense(Long id) {
         return softwareLicenseRepository.findById(id)
                 .orElseThrow(() -> new LicenseNotFoundException("License ID %d does not exist".formatted(id)));
     }
 
+    /**
+     * Executes the find license for update operation.
+     *
+     * @param id the database identifier
+     * @return the resulting software license
+     */
     private SoftwareLicense findLicenseForUpdate(Long id) {
         return softwareLicenseRepository.findByIdForUpdate(id)
                 .orElseThrow(() -> new LicenseNotFoundException("License ID %d does not exist".formatted(id)));
     }
 
+    /**
+     * Maps the supplied domain object to its response representation.
+     *
+     * @param license the software license entity to map or update
+     * @return the mapped response payload
+     */
     private SoftwareLicenseResponse toLicenseResponse(SoftwareLicense license) {
         List<EmployeeResponse> assignedEmployees = softwareAssignmentRepository
                 .findAllBySoftwareLicenseIdAndStatusOrderByAssignedDateDescIdDesc(

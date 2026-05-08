@@ -28,6 +28,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 
+/**
+ * Service implementation for asset assignment operations.
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -36,6 +39,12 @@ public class AssetAssignmentServiceImpl implements AssetAssignmentService {
     private final AssetRepository assetRepository;
     private final EmployeeRepository employeeRepository;
 
+    /**
+     * Assigns the requested asset assignment.
+     *
+     * @param request the request payload
+     * @return the resulting asset assignment
+     */
     @Override
     @Transactional
     public AssetAssignmentResponse assign(AssetAssignmentRequest request) {
@@ -59,18 +68,36 @@ public class AssetAssignmentServiceImpl implements AssetAssignmentService {
         return Mapper.toAssetAssignmentResponse(saved);
     }
 
+    /**
+     * Returns the requested page of asset assignments.
+     *
+     * @param pageable the pagination and sorting information
+     * @return the requested page of results
+     */
     @Override
     @Transactional(readOnly = true)
     public Page<AssetAssignmentResponse> getAll(Pageable pageable) {
         return assignmentRepository.findAll(pageable).map(Mapper::toAssetAssignmentResponse);
     }
 
+    /**
+     * Returns the asset assignment identified by the given id.
+     *
+     * @param id the database identifier
+     * @return the resulting asset assignment
+     */
     @Override
     @Transactional(readOnly = true)
     public AssetAssignmentResponse getById(Long id) {
         return Mapper.toAssetAssignmentResponse(findAssignment(id));
     }
 
+    /**
+     * Executes the get active operation.
+     *
+     * @param pageable the pagination and sorting information
+     * @return the requested page of results
+     */
     @Override
     @Transactional(readOnly = true)
     public Page<AssetAssignmentResponse> getActive(Pageable pageable) {
@@ -78,6 +105,13 @@ public class AssetAssignmentServiceImpl implements AssetAssignmentService {
                 .map(Mapper::toAssetAssignmentResponse);
     }
 
+    /**
+     * Executes the get by asset operation.
+     *
+     * @param assetId the asset identifier
+     * @param pageable the pagination and sorting information
+     * @return the requested page of results
+     */
     @Override
     @Transactional(readOnly = true)
     public Page<AssetAssignmentResponse> getByAsset(Long assetId, Pageable pageable) {
@@ -85,6 +119,13 @@ public class AssetAssignmentServiceImpl implements AssetAssignmentService {
         return assignmentRepository.findByAssetId(assetId, pageable).map(Mapper::toAssetAssignmentResponse);
     }
 
+    /**
+     * Executes the get by employee operation.
+     *
+     * @param employeeId the employee identifier
+     * @param pageable the pagination and sorting information
+     * @return the requested page of results
+     */
     @Override
     @Transactional(readOnly = true)
     public Page<AssetAssignmentResponse> getByEmployee(Long employeeId, Pageable pageable) {
@@ -93,6 +134,14 @@ public class AssetAssignmentServiceImpl implements AssetAssignmentService {
                 .map(Mapper::toAssetAssignmentResponse);
     }
 
+    /**
+     * Executes the get by date range operation.
+     *
+     * @param from the window start date
+     * @param to the window end date
+     * @param pageable the pagination and sorting information
+     * @return the requested page of results
+     */
     @Override
     @Transactional(readOnly = true)
     public Page<AssetAssignmentResponse> getByDateRange(LocalDate from, LocalDate to, Pageable pageable) {
@@ -101,6 +150,12 @@ public class AssetAssignmentServiceImpl implements AssetAssignmentService {
                 .map(Mapper::toAssetAssignmentResponse);
     }
 
+    /**
+     * Returns the assigned asset to the available pool.
+     *
+     * @param id the database identifier
+     * @return the resulting asset assignment
+     */
     @Override
     @Transactional
     public AssetAssignmentResponse returnAsset(Long id) {
@@ -120,6 +175,13 @@ public class AssetAssignmentServiceImpl implements AssetAssignmentService {
         return Mapper.toAssetAssignmentResponse(saved);
     }
 
+    /**
+     * Transfers the current asset assignment to a different employee.
+     *
+     * @param id the database identifier
+     * @param toEmployeeId the target employee identifier
+     * @return the resulting asset assignment
+     */
     @Override
     @Transactional
     public AssetAssignmentResponse transfer(Long id, Long toEmployeeId) {
@@ -149,6 +211,13 @@ public class AssetAssignmentServiceImpl implements AssetAssignmentService {
         return Mapper.toAssetAssignmentResponse(saved);
     }
 
+    /**
+     * Releases active asset assignments for the supplied asset.
+     *
+     * @param assetId the asset identifier
+     * @param remarks the reason captured for the state change
+     * @return the computed numeric result
+     */
     @Override
     @Transactional
     public int releaseActiveAssignmentsForAsset(Long assetId, String remarks) {
@@ -157,6 +226,11 @@ public class AssetAssignmentServiceImpl implements AssetAssignmentService {
                 .orElse(0);
     }
 
+    /**
+     * Deletes the asset assignment.
+     *
+     * @param id the database identifier
+     */
     @Override
     @Transactional
     public void delete(Long id) {
@@ -170,6 +244,13 @@ public class AssetAssignmentServiceImpl implements AssetAssignmentService {
         }
     }
 
+    /**
+     * Executes the release assignment operation.
+     *
+     * @param assignment the assignment entity to map or update
+     * @param remarks the reason captured for the state change
+     * @return the computed numeric result
+     */
     private int releaseAssignment(AssetAssignment assignment, String remarks) {
         assignment.setStatus(AssignmentStatus.RETURNED);
         assignment.setReturnedDate(LocalDate.now());
@@ -188,6 +269,13 @@ public class AssetAssignmentServiceImpl implements AssetAssignmentService {
         return 1;
     }
 
+    /**
+     * Executes the append remark operation.
+     *
+     * @param current the current value
+     * @param addition the addition value
+     * @return the resulting asset assignment
+     */
     private String appendRemark(String current, String addition) {
         if (addition == null || addition.isBlank()) {
             return current;
@@ -198,27 +286,55 @@ public class AssetAssignmentServiceImpl implements AssetAssignmentService {
         return current + "\n" + addition;
     }
 
+    /**
+     * Executes the find assignment operation.
+     *
+     * @param id the database identifier
+     * @return the resulting asset assignment
+     */
     private AssetAssignment findAssignment(Long id) {
         return assignmentRepository.findById(id)
                 .orElseThrow(() -> new AssignmentNotFoundException("Assignment ID %d does not exist".formatted(id)));
     }
 
+    /**
+     * Finds the asset entity for the supplied identifier.
+     *
+     * @param id the database identifier
+     * @return the resulting asset assignment
+     */
     private Asset findAsset(Long id) {
         return assetRepository.findById(id)
                 .orElseThrow(() -> new AssetNotFoundException("Asset ID %d does not exist".formatted(id)));
     }
 
+    /**
+     * Executes the find employee operation.
+     *
+     * @param id the database identifier
+     * @return the resulting asset assignment
+     */
     private Employee findEmployee(Long id) {
         return employeeRepository.findById(id)
                 .orElseThrow(() -> new EmployeeNotFoundException("Employee ID %d does not exist".formatted(id)));
     }
 
+    /**
+     * Executes the ensure employee active operation.
+     *
+     * @param employee the employee entity to map or validate
+     */
     private void ensureEmployeeActive(Employee employee) {
         if (!employee.isActive()) {
             throw new InactiveEmployeeException("Cannot assign to a deactivated employee");
         }
     }
 
+    /**
+     * Executes the ensure asset assignable operation.
+     *
+     * @param asset the asset entity to map or validate
+     */
     private void ensureAssetAssignable(Asset asset) {
         if (asset.getStatus() == AssetStatus.RETIRED) {
             throw new AssetRetiredException("Operation is not allowed on retired asset %s".formatted(asset.getAssetCode()));
@@ -235,6 +351,12 @@ public class AssetAssignmentServiceImpl implements AssetAssignmentService {
         }
     }
 
+    /**
+     * Executes the validate date range operation.
+     *
+     * @param from the window start date
+     * @param to the window end date
+     */
     private void validateDateRange(LocalDate from, LocalDate to) {
         if (from == null || to == null) {
             throw new IllegalArgumentException("from and to dates are required");

@@ -8,6 +8,25 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+/**
+ * Response payload describing asset data.
+ *
+ * @param id the database identifier
+ * @param assetCode the generated asset code
+ * @param name the name or label value
+ * @param brand the brand value
+ * @param model the model value
+ * @param type the requested type value
+ * @param status the requested status value
+ * @param purchaseDate the purchase date value
+ * @param purchaseCost the purchase cost value
+ * @param warrantyExpiryDate the warranty expiry date value
+ * @param serialNumber the serial number value
+ * @param location the location value
+ * @param notes the notes value
+ * @param createdAt the created at value
+ * @param updatedAt the updated at value
+ */
 @Schema(
         description = "Asset details returned by the API",
         example = "{\"id\":1,\"assetCode\":\"LPT-00001\",\"name\":\"MacBook Pro 14\",\"brand\":\"Apple\",\"model\":\"M3 Pro\",\"type\":\"LAPTOP\",\"status\":\"ASSIGNED\",\"purchaseDate\":\"2026-04-01\",\"purchaseCost\":149999.00,\"warrantyExpiryDate\":\"2029-04-01\",\"serialNumber\":\"C02ZK1ABCD\",\"location\":\"Bengaluru HQ\",\"notes\":\"Procured for engineering refresh\",\"createdAt\":\"2026-04-21T09:45:00\",\"updatedAt\":\"2026-04-22T10:30:00\"}"

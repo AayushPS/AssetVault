@@ -7,6 +7,9 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
+/**
+ * JPA entity representing software assignment.
+ */
 @Entity
 @Getter
 @NoArgsConstructor

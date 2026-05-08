@@ -20,10 +20,20 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 
+/**
+ * Maps validation and domain exceptions to consistent HTTP error responses.
+ */
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    /**
+     * Builds an error response for the supplied exception scenario.
+     *
+     * @param ex the captured exception
+     * @param request the request payload
+     * @return the resulting global exception handler
+     */
     @ExceptionHandler({
             AssetNotFoundException.class,
             EmployeeNotFoundException.class,
@@ -35,6 +45,13 @@ public class GlobalExceptionHandler {
         return error(HttpStatus.NOT_FOUND, ex.getMessage(), request, null, ex);
     }
 
+    /**
+     * Builds an error response for the supplied exception scenario.
+     *
+     * @param ex the captured exception
+     * @param request the request payload
+     * @return the resulting global exception handler
+     */
     @ExceptionHandler({
             AssetNotAvailableException.class,
             AssetRetiredException.class,
@@ -52,11 +69,25 @@ public class GlobalExceptionHandler {
         return error(HttpStatus.CONFLICT, ex.getMessage(), request, null, ex);
     }
 
+    /**
+     * Builds an error response for the supplied exception scenario.
+     *
+     * @param ex the captured exception
+     * @param request the request payload
+     * @return the resulting global exception handler
+     */
     @ExceptionHandler(LicenseExpiredException.class)
     public ResponseEntity<ErrorResponse> handleLicenseExpired(LicenseExpiredException ex, HttpServletRequest request) {
         return error(HttpStatus.UNPROCESSABLE_CONTENT, ex.getMessage(), request, null, ex);
     }
 
+    /**
+     * Builds an error response for the supplied exception scenario.
+     *
+     * @param ex the captured exception
+     * @param request the request payload
+     * @return the resulting global exception handler
+     */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidation(
             MethodArgumentNotValidException ex,
@@ -69,6 +100,13 @@ public class GlobalExceptionHandler {
         return error(HttpStatus.BAD_REQUEST, "Request validation failed", request, fieldErrors, ex);
     }
 
+    /**
+     * Builds an error response for the supplied exception scenario.
+     *
+     * @param ex the captured exception
+     * @param request the request payload
+     * @return the resulting global exception handler
+     */
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<ErrorResponse> handleConstraintViolation(
             ConstraintViolationException ex,
@@ -81,6 +119,13 @@ public class GlobalExceptionHandler {
         return error(HttpStatus.BAD_REQUEST, "Request parameter validation failed", request, fieldErrors, ex);
     }
 
+    /**
+     * Builds an error response for the supplied exception scenario.
+     *
+     * @param ex the captured exception
+     * @param request the request payload
+     * @return the resulting global exception handler
+     */
     @ExceptionHandler(MissingServletRequestParameterException.class)
     public ResponseEntity<ErrorResponse> handleMissingRequestParameter(
             MissingServletRequestParameterException ex,
@@ -91,6 +136,13 @@ public class GlobalExceptionHandler {
         return error(HttpStatus.BAD_REQUEST, "Request parameter validation failed", request, fieldErrors, ex);
     }
 
+    /**
+     * Builds an error response for the supplied exception scenario.
+     *
+     * @param ex the captured exception
+     * @param request the request payload
+     * @return the resulting global exception handler
+     */
     @ExceptionHandler(ServletRequestBindingException.class)
     public ResponseEntity<ErrorResponse> handleServletRequestBinding(
             ServletRequestBindingException ex,
@@ -99,6 +151,13 @@ public class GlobalExceptionHandler {
         return error(HttpStatus.BAD_REQUEST, ex.getMessage(), request, null, ex);
     }
 
+    /**
+     * Builds an error response for the supplied exception scenario.
+     *
+     * @param ex the captured exception
+     * @param request the request payload
+     * @return the resulting global exception handler
+     */
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorResponse> handleMalformedRequestBody(
             HttpMessageNotReadableException ex,
@@ -107,6 +166,13 @@ public class GlobalExceptionHandler {
         return error(HttpStatus.BAD_REQUEST, "Malformed request body", request, null, ex);
     }
 
+    /**
+     * Builds an error response for the supplied exception scenario.
+     *
+     * @param ex the captured exception
+     * @param request the request payload
+     * @return the resulting global exception handler
+     */
     @ExceptionHandler({
             IllegalArgumentException.class,
             MethodArgumentTypeMismatchException.class
@@ -115,6 +181,13 @@ public class GlobalExceptionHandler {
         return error(HttpStatus.BAD_REQUEST, ex.getMessage(), request, null, ex);
     }
 
+    /**
+     * Builds an error response for the supplied exception scenario.
+     *
+     * @param ex the captured exception
+     * @param request the request payload
+     * @return the resulting global exception handler
+     */
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ErrorResponse> handleDataIntegrity(
             DataIntegrityViolationException ex,
@@ -123,11 +196,28 @@ public class GlobalExceptionHandler {
         return error(HttpStatus.CONFLICT, "Request conflicts with existing data", request, null, ex);
     }
 
+    /**
+     * Builds an error response for the supplied exception scenario.
+     *
+     * @param ex the captured exception
+     * @param request the request payload
+     * @return the resulting global exception handler
+     */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleUnexpected(Exception ex, HttpServletRequest request) {
         return error(HttpStatus.INTERNAL_SERVER_ERROR, "Unexpected server error", request, null, ex);
     }
 
+    /**
+     * Executes the error operation.
+     *
+     * @param status the requested status value
+     * @param message the exception detail message
+     * @param request the request payload
+     * @param fieldErrors the field errors value
+     * @param ex the captured exception
+     * @return the resulting global exception handler
+     */
     private ResponseEntity<ErrorResponse> error(
             HttpStatus status,
             String message,
@@ -150,6 +240,12 @@ public class GlobalExceptionHandler {
         ));
     }
 
+    /**
+     * Executes the reason phrase operation.
+     *
+     * @param status the requested status value
+     * @return the resulting global exception handler
+     */
     private String reasonPhrase(HttpStatus status) {
         return switch (status) {
             case BAD_REQUEST -> "Bad Request";
@@ -157,10 +253,22 @@ public class GlobalExceptionHandler {
             case CONFLICT -> "Conflict";
             case UNPROCESSABLE_CONTENT -> "Unprocessable Entity";
             case INTERNAL_SERVER_ERROR -> "Internal Server Error";
+            /**
+             * Executes the humanize operation.
+             *
+             * @param status.name() the status.name() value
+             * @return the resulting global exception handler
+             */
             default -> humanize(status.name());
         };
     }
 
+    /**
+     * Executes the humanize operation.
+     *
+     * @param value the value to inspect
+     * @return the resulting global exception handler
+     */
     private String humanize(String value) {
         StringBuilder result = new StringBuilder();
         for (String word : value.split("_")) {

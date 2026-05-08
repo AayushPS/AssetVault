@@ -5,6 +5,16 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
 import java.util.Map;
 
+/**
+ * Response payload describing error data.
+ *
+ * @param timestamp the timestamp value
+ * @param status the requested status value
+ * @param error the error value
+ * @param message the exception detail message
+ * @param path the path value
+ * @param blank\"}" the blank\"}" value
+ */
 @Schema(
         description = "Standard API error response",
         example = "{\"timestamp\":\"2026-04-21T09:45:00\",\"status\":409,\"error\":\"Conflict\",\"message\":\"Asset LPT-00001 is currently ASSIGNED\",\"path\":\"/api/v1/assignments\"}"

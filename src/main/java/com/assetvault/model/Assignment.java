@@ -10,6 +10,9 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+/**
+ * Mapped superclass that captures common assignment lifecycle fields.
+ */
 @MappedSuperclass
 @Getter
 @NoArgsConstructor
