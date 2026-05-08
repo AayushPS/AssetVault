@@ -11,6 +11,7 @@ AssetVault is a production-ready backend system for company IT/Admin departments
 - [Features](#features)
 - [Tech Stack](#tech-stack)
 - [Architecture](#architecture)
+- [Documentation](#documentation)
 - [Quick Start](#quick-start)
 - [API Reference](#api-reference)
 - [Configuration](#configuration)
@@ -53,6 +54,20 @@ AssetVault is a production-ready backend system for company IT/Admin departments
 | Coverage | JaCoCo (80% gate) |
 | Logging | SLF4J + Logback |
 | Monitoring | Spring Actuator |
+
+---
+
+## Documentation
+
+This README is the top-level project guide and endpoint inventory. For deeper, code-aligned documentation, use the dedicated docs set:
+
+| Topic | File |
+|-------|------|
+| Documentation hub | [docs/README.md](docs/README.md) |
+| Architecture and business rules | [docs/architecture.md](docs/architecture.md) |
+| Runtime operations and deployment notes | [docs/operations.md](docs/operations.md) |
+| Test strategy and execution | [docs/testing.md](docs/testing.md) |
+| Generated test gap analysis | [TEST_PLAN.md](TEST_PLAN.md) |
 
 ---
 
